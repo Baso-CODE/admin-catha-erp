@@ -1,9 +1,6 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
-import * as React from "react";
-
-import { authService } from "@/app/services/auth.service"; // Pastikan path ini sesuai
+import { authService } from "@/app/services/auth.service";
 import { NavFavorites } from "@/components/nav-favorites";
 import { NavMain } from "@/components/nav-main";
 import { NavSecondary } from "@/components/nav-secondary";
@@ -24,12 +21,14 @@ import {
   FolderKanbanIcon,
   HelpCircleIcon,
   LayoutDashboardIcon,
-  LogOut, // Import icon LogOut
+  LogOut,
   ReceiptTextIcon,
   SettingsIcon,
   UsersIcon,
 } from "lucide-react";
-import { toast } from "sonner"; // Opsional untuk notifikasi
+import { usePathname, useRouter } from "next/navigation";
+import * as React from "react";
+import { toast } from "sonner";
 
 const data = {
   teams: [
@@ -39,53 +38,64 @@ const data = {
       plan: "Agency Operations",
     },
   ],
+
   navMain: [
     {
       title: "Overview",
       url: "/internal",
       icon: <LayoutDashboardIcon />,
-      isActive: true,
+      permission: null,
     },
     {
       title: "CRM & Leads",
       url: "/internal/crm",
       icon: <UsersIcon />,
+      permission: "crm.lead.read",
     },
     {
       title: "Projects",
       url: "/internal/projects",
       icon: <FolderKanbanIcon />,
+      permission: "project.read",
     },
     {
       title: "Finance",
       url: "/internal/finance",
       icon: <ReceiptTextIcon />,
+      permission: "finance.invoice.read",
     },
   ],
+
   navSecondary: [
     {
       title: "Settings",
       url: "/internal/settings",
       icon: <SettingsIcon />,
+      permission: "admin.role.read",
     },
     {
       title: "Help & Support",
       url: "/internal/support",
       icon: <HelpCircleIcon />,
+      permission: null,
     },
   ],
+
   favorites: [
     {
-      name: "User Management (Admin)",
+      name: "User Management",
       url: "/internal/users",
       emoji: "🛡️",
+      permission: "admin.user.read",
     },
     {
-      name: "Audit Logs & Activity",
+      name: "Audit Logs",
       url: "/internal/audit-logs",
       emoji: "📋",
+      permission: "admin.audit.read",
     },
   ],
+
   workspaces: [
     {
       name: "Modul Operasional",
@@ -95,56 +105,71 @@ const data = {
           name: "Daftar Klien Aktif",
           url: "/internal/crm",
           emoji: "👥",
+          permission: "crm.lead.read",
         },
         {
           name: "Tracking Progress Task",
           url: "/internal/projects",
           emoji: "📊",
+          permission: "project.read",
         },
         {
           name: "Invoice & Pembayaran",
           url: "/internal/finance",
           emoji: "💰",
-        },
-      ],
-    },
-    {
-      name: "Pengaturan Sistem",
-      emoji: "⚙️",
-      pages: [
-        {
-          name: "Konfigurasi Perusahaan",
-          url: "/internal/settings",
-          emoji: "🏢",
-        },
-        {
-          name: "Keamanan Akun",
-          url: "/internal/settings#security",
-          emoji: "🔒",
+          permission: "finance.invoice.read",
         },
       ],
     },
   ],
 };
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
+  permissions: string[];
+}
+
+export function AppSidebar({ permissions, ...props }: AppSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const updatedNavMain = data.navMain.map((item) => ({
-    ...item,
-    isActive: pathname === item.url,
-  }));
+  const hasPermission = (permission?: string | null) => {
+    if (!permission) return true;
+    return permissions.includes(permission);
+  };
 
-  // Fungsi untuk handle logout
+  const navMain = data.navMain
+    .filter((item) => hasPermission(item.permission))
+    .map((item) => ({
+      ...item,
+      isActive:
+        pathname === item.url ||
+        (item.url !== "/internal" && pathname.startsWith(`${item.url}/`)),
+    }));
+
+  const navSecondary = data.navSecondary.filter((item) =>
+    hasPermission(item.permission),
+  );
+
+  const favorites = data.favorites.filter((item) =>
+    hasPermission(item.permission),
+  );
+
+  const workspaces = data.workspaces
+    .map((workspace) => ({
+      ...workspace,
+      pages: workspace.pages.filter((page) => hasPermission(page.permission)),
+    }))
+    .filter((workspace) => workspace.pages.length > 0);
+
   const handleLogout = async () => {
     try {
-      await authService.logout(); // Menghapus HTTP-Only Cookie dari backend
+      await authService.logout();
+
       toast.success("Berhasil keluar dari sistem.");
-      router.push("/login");
-      router.refresh(); // Segarkan state agar middleware Next.js mendeteksi cookie telah hilang
-    } catch (error) {
-      console.error("Gagal logout", error);
+
+      router.replace("/login");
+      router.refresh();
+    } catch {
       toast.error("Gagal keluar dari sistem.");
     }
   };
@@ -153,13 +178,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     <Sidebar className="border-r-0" {...props}>
       <SidebarHeader>
         <TeamSwitcher teams={data.teams} />
-        <NavMain items={updatedNavMain} />
+        <NavMain items={navMain} />
       </SidebarHeader>
 
       <SidebarContent>
-        <NavFavorites favorites={data.favorites} />
-        <NavWorkspaces workspaces={data.workspaces} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+        <NavFavorites favorites={favorites} />
+        <NavWorkspaces workspaces={workspaces} />
+        <NavSecondary items={navSecondary} className="mt-auto" />
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border p-2">
@@ -167,7 +192,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={handleLogout}
-              className="text-destructive hover:bg-destructive/10 hover:text-destructive w-full justify-start gap-3 transition-colors"
+              className="w-full justify-start gap-3 text-destructive transition-colors hover:bg-destructive/10 hover:text-destructive"
               tooltip="Keluar Sistem">
               <LogOut className="size-4 shrink-0" />
               <span>Keluar Sistem</span>

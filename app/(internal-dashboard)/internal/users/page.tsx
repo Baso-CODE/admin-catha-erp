@@ -2,7 +2,6 @@
 
 import {
   MoreHorizontal,
-  Plus,
   Search,
   ShieldCheck,
   TrendingUp,
@@ -10,7 +9,7 @@ import {
   Users,
   UserX,
 } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -19,7 +18,9 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { toast } from "sonner";
 
+import { UserItem, userService } from "@/app/services/userManagement.service";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,193 +33,274 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useDebounce } from "@/hooks/useDebounce";
 
-// Data Dummy Grafik Performa Pekerja (Task Completed per Hari)
-const performanceData = [
-  { date: "Jun 24", performance: 40 },
-  { date: "Jun 25", performance: 30 },
-  { date: "Jun 26", performance: 65 },
-  { date: "Jun 27", performance: 85 },
-  { date: "Jun 28", performance: 50 },
-  { date: "Jun 29", performance: 70 },
-  { date: "Jun 30", performance: 95 },
-];
+import { CreateUserModal } from "./components/createUserModal";
 
-// Data Dummy Tabel User Internal
-const initialUsers = [
-  {
-    id: 1,
-    name: "Catha Admin",
-    email: "admin@catha.co.id",
-    role: "OWNER",
-    status: "Active",
-    tasksCompleted: 45,
-    efficiency: "98%",
-  },
-  {
-    id: 2,
-    name: "Rian Developer",
-    email: "rian@catha.co.id",
-    role: "ADMIN",
-    status: "Active",
-    tasksCompleted: 38,
-    efficiency: "92%",
-  },
-  {
-    id: 3,
-    name: "Siti Marketing",
-    email: "siti@catha.co.id",
-    role: "STAFF",
-    status: "Active",
-    tasksCompleted: 29,
-    efficiency: "88%",
-  },
-  {
-    id: 4,
-    name: "Budi Finance",
-    email: "budi@catha.co.id",
-    role: "STAFF",
-    status: "Inactive",
-    tasksCompleted: 12,
-    efficiency: "75%",
-  },
-  {
-    id: 5,
-    name: "Dewi Support",
-    email: "dewi@catha.co.id",
-    role: "STAFF",
-    status: "Active",
-    tasksCompleted: 34,
-    efficiency: "90%",
-  },
-];
+const USER_LIMIT = 10;
 
 export default function UserManagementPage() {
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearch = useDebounce(searchTerm, 500);
 
-  const filteredUsers = initialUsers.filter(
-    (user) =>
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  const [loading, setLoading] = useState(true);
+
+  const [period, setPeriod] = useState<"7days" | "30days" | "3months">("7days");
+
+  const [page, setPage] = useState(1);
+
+  const [metrics, setMetrics] = useState({
+    totalUsers: 0,
+    activeUsers: 0,
+    inactiveUsers: 0,
+    averageEfficiency: 0,
+  });
+
+  const [performanceData, setPerformanceData] = useState<
+    Array<{
+      date: string;
+      performance: number;
+    }>
+  >([]);
+
+  const [usersList, setUsersList] = useState<UserItem[]>([]);
+
+  const [meta, setMeta] = useState({
+    total: 0,
+    page: 1,
+    limit: USER_LIMIT,
+    totalPages: 1,
+  });
+
+  const loadDashboardData = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      const [metricsRes, perfRes, usersRes] = await Promise.all([
+        userService.getMetrics(),
+
+        userService.getPerformance(period),
+
+        userService.getUsers({
+          search: debouncedSearch || undefined,
+          page,
+          limit: USER_LIMIT,
+        }),
+      ]);
+
+      if (metricsRes.success) {
+        setMetrics(metricsRes.data);
+      }
+
+      if (perfRes.success) {
+        setPerformanceData(perfRes.data);
+      }
+
+      if (usersRes.success) {
+        setUsersList(usersRes.data);
+        setMeta(usersRes.meta);
+      }
+    } catch (error) {
+      toast.error("Gagal memuat data", {
+        description:
+          error instanceof Error
+            ? error.message
+            : "Terjadi kesalahan pada server.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [period, debouncedSearch, page]);
+
+  useEffect(() => {
+    void loadDashboardData();
+  }, [loadDashboardData]);
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setPage(1);
+  };
+
+  const handlePreviousPage = () => {
+    setPage((current) => Math.max(1, current - 1));
+  };
+
+  const handleNextPage = () => {
+    setPage((current) => Math.min(meta.totalPages, current + 1));
+  };
+
+  const getUserRoles = (user: UserItem) => {
+    if (!user.roles?.length) {
+      return [];
+    }
+
+    return user.roles.map(({ role }) => role);
+  };
+
+  const startItem = meta.total === 0 ? 0 : (meta.page - 1) * meta.limit + 1;
+
+  const endItem = Math.min(meta.page * meta.limit, meta.total);
 
   return (
     <div className="space-y-6">
-      {/* Header Halaman */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
             User Management & Performance
           </h1>
+
           <p className="text-sm text-muted-foreground">
             Kelola akses staf internal agensi dan pantau metrik produktivitas
             kerja.
           </p>
         </div>
-        <Button className="gap-2">
-          <Plus className="size-4" />
-          <span>Tambah Pengguna</span>
-        </Button>
+
+        <CreateUserModal onSuccess={loadDashboardData} />
       </div>
 
-      {/* 1. KARTU METRIK (STAT CARDS) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-card border-border/55">
+      {/* Metrics */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Total Pengguna
             </CardTitle>
+
             <Users className="size-4 text-primary" />
           </CardHeader>
+
           <CardContent>
-            <div className="text-2xl font-bold">24 Staf</div>
-            <p className="text-xs text-emerald-500 mt-1 flex items-center gap-1 font-medium">
-              <TrendingUp className="size-3" /> +12.5% bulan ini
+            <div className="text-2xl font-bold">{metrics.totalUsers} Staf</div>
+
+            <p className="mt-1 flex items-center gap-1 text-xs font-medium text-emerald-500">
+              <TrendingUp className="size-3" />
+              Data diperbarui otomatis
             </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-card border-border/55">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Akun Aktif
             </CardTitle>
+
             <UserCheck className="size-4 text-emerald-500" />
           </CardHeader>
+
           <CardContent>
-            <div className="text-2xl font-bold">22 Aktif</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Retensi sistem sangat baik
+            <div className="text-2xl font-bold">
+              {metrics.activeUsers} Aktif
+            </div>
+
+            <p className="mt-1 text-xs text-muted-foreground">
+              Pengguna dengan akun aktif
             </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-card border-border/55">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Rata-rata Efisiensi
             </CardTitle>
+
             <ShieldCheck className="size-4 text-blue-500" />
           </CardHeader>
+
           <CardContent>
-            <div className="text-2xl font-bold">91.4%</div>
-            <p className="text-xs text-emerald-500 mt-1 flex items-center gap-1 font-medium">
-              <TrendingUp className="size-3" /> +4.5% dari target
+            <div className="text-2xl font-bold">
+              {metrics.averageEfficiency}%
+            </div>
+
+            <p className="mt-1 flex items-center gap-1 text-xs font-medium text-emerald-500">
+              <TrendingUp className="size-3" />
+              Performa tim
             </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-card border-border/55">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Akun Nonaktif
             </CardTitle>
+
             <UserX className="size-4 text-destructive" />
           </CardHeader>
+
           <CardContent>
-            <div className="text-2xl font-bold">2 Nonaktif</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Memerlukan tinjauan admin
+            <div className="text-2xl font-bold">
+              {metrics.inactiveUsers} Nonaktif
+            </div>
+
+            <p className="mt-1 text-xs text-muted-foreground">
+              Akun yang sedang dinonaktifkan
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* 2. CHART PERFORMA PEKERJA (AREA CHART) */}
-      <Card className="bg-card border-border/55">
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
+      {/* Performance Chart */}
+      <Card>
+        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <CardTitle className="text-base font-semibold">
               Grafik Performa Tim
             </CardTitle>
+
             <p className="text-xs text-muted-foreground">
-              Total tugas selesai oleh seluruh staf dalam 7 hari terakhir
+              Total tugas selesai oleh seluruh staf berdasarkan periode.
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="text-xs h-8">
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant={period === "3months" ? "default" : "outline"}
+              size="sm"
+              className="h-8 text-xs"
+              onClick={() => setPeriod("3months")}>
               3 Bulan
             </Button>
-            <Button variant="outline" size="sm" className="text-xs h-8">
+
+            <Button
+              variant={period === "30days" ? "default" : "outline"}
+              size="sm"
+              className="h-8 text-xs"
+              onClick={() => setPeriod("30days")}>
               30 Hari
             </Button>
-            <Button variant="default" size="sm" className="text-xs h-8">
+
+            <Button
+              variant={period === "7days" ? "default" : "outline"}
+              size="sm"
+              className="h-8 text-xs"
+              onClick={() => setPeriod("7days")}>
               7 Hari
             </Button>
           </div>
         </CardHeader>
+
         <CardContent className="pt-4">
-          <div className="h-[250px] w-full">
+          <div className="h-62.5 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
                 data={performanceData}
-                margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                margin={{
+                  top: 10,
+                  right: 10,
+                  left: -20,
+                  bottom: 0,
+                }}>
                 <defs>
                   <linearGradient id="colorPerf" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.4} />
+
                     <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
                   </linearGradient>
                 </defs>
+
                 <XAxis
                   dataKey="date"
                   stroke="#888888"
@@ -226,12 +308,14 @@ export default function UserManagementPage() {
                   tickLine={false}
                   axisLine={false}
                 />
+
                 <YAxis
                   stroke="#888888"
                   fontSize={12}
                   tickLine={false}
                   axisLine={false}
                 />
+
                 <Tooltip
                   contentStyle={{
                     backgroundColor: "#18181b",
@@ -240,6 +324,7 @@ export default function UserManagementPage() {
                     color: "#fff",
                   }}
                 />
+
                 <Area
                   type="monotone"
                   dataKey="performance"
@@ -254,89 +339,187 @@ export default function UserManagementPage() {
         </CardContent>
       </Card>
 
-      {/* 3. TABEL DATA USER INTERNAL */}
-      <Card className="bg-card border-border/55">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base font-semibold">
-            Daftar Pengguna Internal
-          </CardTitle>
-          <div className="relative w-64">
-            <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
+      {/* Users Table */}
+      <Card>
+        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <CardTitle className="text-base font-semibold">
+              Daftar Pengguna Internal
+            </CardTitle>
+
+            <p className="mt-1 text-xs text-muted-foreground">
+              {meta.total} pengguna terdaftar
+            </p>
+          </div>
+
+          <div className="relative w-full sm:w-72">
+            <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+
             <Input
               type="search"
               placeholder="Cari nama atau email..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 h-9 text-xs"
+              onChange={(event) => handleSearchChange(event.target.value)}
+              className="h-9 pl-9 text-xs"
             />
           </div>
         </CardHeader>
+
         <CardContent>
-          <div className="rounded-md border border-border/40 overflow-hidden">
+          <div className="overflow-hidden rounded-md border bg-background shadow-sm">
             <Table>
               <TableHeader className="bg-muted/50">
                 <TableRow>
-                  <TableHead className="w-[250px]">Nama Staf</TableHead>
+                  <TableHead className="w-62.5">Nama Staf</TableHead>
+
                   <TableHead>Role Akses</TableHead>
+
                   <TableHead>Status</TableHead>
+
                   <TableHead className="text-center">Task Selesai</TableHead>
+
                   <TableHead className="text-center">Efisiensi</TableHead>
+
                   <TableHead className="text-right">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
+
               <TableBody>
-                {filteredUsers.length > 0 ? (
-                  filteredUsers.map((user) => (
-                    <TableRow key={user.id} className="hover:bg-muted/30">
-                      <TableCell className="font-medium">
-                        <div>{user.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {user.email}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className="text-[10px] font-semibold">
-                          {user.role}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${
-                            user.status === "Active"
-                              ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
-                              : "bg-destructive/10 text-destructive border border-destructive/20"
-                          }`}>
+                {loading ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={6}
+                      className="py-10 text-center text-xs text-muted-foreground">
+                      Memuat data pengguna...
+                    </TableCell>
+                  </TableRow>
+                ) : usersList.length > 0 ? (
+                  usersList.map((user) => {
+                    const roles = getUserRoles(user);
+
+                    return (
+                      <TableRow key={user.id} className="hover:bg-muted/30">
+                        <TableCell>
+                          <div className="font-medium">{user.name}</div>
+
+                          <div className="text-xs text-muted-foreground">
+                            {user.email}
+                          </div>
+                        </TableCell>
+
+                        <TableCell>
+                          {roles.length > 0 ? (
+                            <div className="flex flex-wrap gap-1.5">
+                              {roles.map((role) => (
+                                <Badge
+                                  key={role.id}
+                                  variant="outline"
+                                  className="text-[10px] font-semibold">
+                                  {role.name}
+                                </Badge>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">
+                              Belum ada role
+                            </span>
+                          )}
+                        </TableCell>
+
+                        <TableCell>
                           <span
-                            className={`size-1.5 rounded-full ${user.status === "Active" ? "bg-emerald-500" : "bg-destructive"}`}></span>
-                          {user.status}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-center font-semibold">
-                        {user.tasksCompleted}
-                      </TableCell>
-                      <TableCell className="text-center text-emerald-500 font-medium">
-                        {user.efficiency}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" className="size-8">
-                          <MoreHorizontal className="size-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                            className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium ${
+                              user.isActive
+                                ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-500"
+                                : "border-destructive/20 bg-destructive/10 text-destructive"
+                            }`}>
+                            <span
+                              className={`size-1.5 rounded-full ${
+                                user.isActive
+                                  ? "bg-emerald-500"
+                                  : "bg-destructive"
+                              }`}
+                            />
+
+                            {user.isActive ? "Active" : "Inactive"}
+                          </span>
+                        </TableCell>
+
+                        <TableCell className="text-center font-semibold">
+                          {user.tasksCompleted ?? 0}
+                        </TableCell>
+
+                        <TableCell className="text-center font-medium">
+                          {user.efficiency ?? "-"}
+                        </TableCell>
+
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-8">
+                            <MoreHorizontal className="size-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 ) : (
                   <TableRow>
                     <TableCell
                       colSpan={6}
-                      className="text-center py-6 text-muted-foreground text-xs">
-                      Tidak ada pengguna yang ditemukan.
+                      className="py-10 text-center text-xs text-muted-foreground">
+                      {debouncedSearch
+                        ? `Tidak ada pengguna yang cocok dengan "${debouncedSearch}".`
+                        : "Tidak ada pengguna yang ditemukan."}
                     </TableCell>
                   </TableRow>
                 )}
               </TableBody>
             </Table>
+
+            {/* Pagination */}
+            {!loading && meta.total > 0 && (
+              <div className="flex flex-col gap-3 border-t px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-xs text-muted-foreground">
+                  Menampilkan{" "}
+                  <span className="font-medium text-foreground">
+                    {startItem}
+                  </span>
+                  {" - "}
+                  <span className="font-medium text-foreground">{endItem}</span>
+                  {" dari "}
+                  <span className="font-medium text-foreground">
+                    {meta.total}
+                  </span>{" "}
+                  pengguna
+                </p>
+
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-muted-foreground">
+                    Halaman {meta.page} dari {meta.totalPages}
+                  </span>
+
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={meta.page <= 1 || loading}
+                      onClick={handlePreviousPage}>
+                      Sebelumnya
+                    </Button>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={meta.page >= meta.totalPages || loading}
+                      onClick={handleNextPage}>
+                      Selanjutnya
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

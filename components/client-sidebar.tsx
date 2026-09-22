@@ -2,9 +2,9 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import * as React from "react";
+import { toast } from "sonner";
 
 import { authService } from "@/app/services/auth.service";
-
 import { NavMain } from "@/components/nav-main";
 import { NavSecondary } from "@/components/nav-secondary";
 import { TeamSwitcher } from "@/components/team-switcher";
@@ -34,110 +34,130 @@ const clientData = {
       plan: "Client Workspace",
     },
   ],
+
   navMain: [
     {
       title: "Dashboard Klien",
       url: "/portal",
       icon: <LayoutDashboardIcon />,
-      isActive: true,
+      permission: null,
     },
     {
       title: "Proyek Saya",
       url: "/portal/projects",
       icon: <FolderKanbanIcon />,
+      permission: "client.project.read",
     },
     {
       title: "Tagihan & Invoice",
       url: "/portal/invoices",
       icon: <ReceiptTextIcon />,
+      permission: "client.invoice.read",
     },
   ],
+
   navSecondary: [
     {
       title: "Bantuan / Tiket",
       url: "/portal/support",
       icon: <HeadsetIcon />,
+      permission: "client.support.read",
     },
   ],
+
   favorites: [
     {
       name: "Dokumen & Berkas",
       url: "/portal/documents",
       emoji: "📁",
-    },
-  ],
-  workspaces: [
-    {
-      name: "Aktivitas Layanan",
-      emoji: "🚀",
-      pages: [
-        {
-          name: "Status Pengerjaan",
-          url: "/portal/projects",
-          emoji: "⚡",
-        },
-        {
-          name: "Riwayat Pembayaran",
-          url: "/portal/invoices",
-          emoji: "💳",
-        },
-      ],
+      permission: "client.document.read",
     },
   ],
 };
 
-export function ClientSidebar({
-  ...props
-}: React.ComponentProps<typeof Sidebar>) {
+interface ClientSidebarProps extends React.ComponentProps<typeof Sidebar> {
+  permissions: string[];
+}
+
+export function ClientSidebar({ permissions, ...props }: ClientSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
 
-  // 2. Ganti logika logout menggunakan endpoint backend
-  const handleLogout = async () => {
-    try {
-      await authService.logout(); // Backend akan membersihkan HTTP-Only Cookie
-      router.push("/login");
-      router.refresh(); // Wajib agar middleware Next.js mendeteksi state baru
-    } catch (error) {
-      console.error("Gagal keluar dari sistem:", error);
-    }
+  const hasPermission = (permission?: string | null) => {
+    if (!permission) return true;
+
+    return permissions.includes(permission);
   };
 
-  const updatedNavMain = clientData.navMain.map((item) => ({
-    ...item,
-    isActive: pathname === item.url,
-  }));
+  const navMain = clientData.navMain
+    .filter((item) => hasPermission(item.permission))
+    .map((item) => ({
+      ...item,
+      isActive:
+        pathname === item.url ||
+        (item.url !== "/portal" && pathname.startsWith(`${item.url}/`)),
+    }));
+
+  const navSecondary = clientData.navSecondary.filter((item) =>
+    hasPermission(item.permission),
+  );
+
+  const favorites = clientData.favorites
+    .filter((item) => hasPermission(item.permission))
+    .map((item) => ({
+      title: item.name,
+      url: item.url,
+      icon: <span className="text-base">{item.emoji}</span>,
+      isActive: pathname === item.url || pathname.startsWith(`${item.url}/`),
+    }));
+
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+
+      toast.success("Berhasil keluar dari sistem.");
+
+      router.replace("/login");
+      router.refresh();
+    } catch (error) {
+      toast.error("Gagal keluar dari sistem.", {
+        description:
+          error instanceof Error
+            ? error.message
+            : "Terjadi kesalahan pada server.",
+      });
+    }
+  };
 
   return (
     <Sidebar className="border-r-0" {...props}>
       <SidebarHeader>
         <TeamSwitcher teams={clientData.teams} />
-        <NavMain items={updatedNavMain} />
+
+        <NavMain items={navMain} />
       </SidebarHeader>
+
       <SidebarContent>
-        <NavMain
-          items={clientData.favorites.map((fav) => ({
-            title: fav.name,
-            url: fav.url,
-            icon: <span className="text-base">{fav.emoji}</span>,
-            isActive: pathname === fav.url,
-          }))}
-        />
-        <NavSecondary items={clientData.navSecondary} className="mt-auto" />
+        {favorites.length > 0 && <NavMain items={favorites} />}
+
+        <NavSecondary items={navSecondary} className="mt-auto" />
       </SidebarContent>
+
       <SidebarFooter className="border-t border-sidebar-border p-2">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={handleLogout}
-              className="text-destructive hover:bg-destructive/10 hover:text-destructive w-full justify-start gap-3 transition-colors"
+              className="w-full justify-start gap-3 text-destructive transition-colors hover:bg-destructive/10 hover:text-destructive"
               tooltip="Keluar">
               <LogOut className="size-4 shrink-0" />
+
               <span>Keluar Sistem</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
+
       <SidebarRail />
     </Sidebar>
   );
