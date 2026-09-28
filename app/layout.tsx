@@ -35,8 +35,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         inter.variable,
       )}>
       <body suppressHydrationWarning>
-        {" "}
-        {/* Tambahkan juga di sini */}
         <TooltipProvider>{children}</TooltipProvider>
         <Toaster richColors position="top-center" />
       </body>
