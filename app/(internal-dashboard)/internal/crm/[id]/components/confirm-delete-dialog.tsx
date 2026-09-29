@@ -1,7 +1,7 @@
 "use client";
 
-import { Loader2, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { Loader2 } from "lucide-react";
+import { ReactNode, useState } from "react";
 
 import {
   AlertDialog,
@@ -14,6 +14,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 
 interface ConfirmDeleteDialogProps {
   title?: string;
@@ -22,6 +23,7 @@ interface ConfirmDeleteDialogProps {
   loadingLabel?: string;
   onConfirm: () => void | Promise<void>;
   disabled?: boolean;
+  trigger?: ReactNode;
 }
 
 export function ConfirmDeleteDialog({
@@ -31,6 +33,7 @@ export function ConfirmDeleteDialog({
   loadingLabel = "Menghapus...",
   onConfirm,
   disabled = false,
+  trigger,
 }: ConfirmDeleteDialogProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -47,17 +50,9 @@ export function ConfirmDeleteDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger
-        render={
-          <button
-            type="button"
-            disabled={disabled}
-            className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-destructive outline-none hover:bg-destructive/10 disabled:pointer-events-none disabled:opacity-50">
-            <Trash2 className="size-4" />
-            {triggerLabel}
-          </button>
-        }
-      />
+      <AlertDialogTrigger asChild>
+        {trigger ?? <Button variant="destructive">{triggerLabel}</Button>}
+      </AlertDialogTrigger>
 
       <AlertDialogContent>
         <AlertDialogHeader>

@@ -31,12 +31,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+import { PermissionGuard } from "@/components/shared/permission-guard";
 import { ConfirmDeleteDialog } from "./confirm-delete-dialog";
 import { CreateQuotationModal } from "./create-quotation-modal";
 import { EditQuotationModal } from "./edit-quotation-modal";
+import { QuotationDetailModal } from "./quotation-detail-modal";
 
 interface QuotationTableProps {
   leadId: string;
+  permissions: string[];
   onRefreshLead?: () => void | Promise<void>;
 }
 
@@ -104,10 +107,13 @@ function getStatusBadge(status: string) {
   }
 }
 
-export function QuotationTable({ leadId, onRefreshLead }: QuotationTableProps) {
+export function QuotationTable({
+  leadId,
+  permissions,
+  onRefreshLead,
+}: QuotationTableProps) {
   const [quotations, setQuotations] = useState<QuotationItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const [page, setPage] = useState(1);
 
@@ -182,8 +188,11 @@ export function QuotationTable({ leadId, onRefreshLead }: QuotationTableProps) {
             Kelola quotation untuk lead ini.
           </p>
         </div>
-
-        <CreateQuotationModal leadId={leadId} onSuccess={handleRefresh} />
+        <PermissionGuard
+          permissions={permissions}
+          required="crm.quotation.create">
+          <CreateQuotationModal leadId={leadId} onSuccess={handleRefresh} />
+        </PermissionGuard>
       </CardHeader>
 
       <CardContent className="space-y-4">
@@ -242,32 +251,40 @@ export function QuotationTable({ leadId, onRefreshLead }: QuotationTableProps) {
 
                     <TableCell className="text-right">
                       <DropdownMenu>
-                        <DropdownMenuTrigger
-                          render={
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="size-8">
-                              <MoreHorizontal className="size-4" />
-                            </Button>
-                          }
-                        />
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-8">
+                            <MoreHorizontal className="size-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
 
                         <DropdownMenuContent align="end">
-                          <EditQuotationModal
-                            quotation={quotation}
-                            onSuccess={handleRefresh}
-                          />
+                          <QuotationDetailModal quotation={quotation} />
 
-                          <DropdownMenuSeparator />
+                          <PermissionGuard
+                            permissions={permissions}
+                            required="crm.quotation.update">
+                            <EditQuotationModal
+                              quotation={quotation}
+                              onSuccess={handleRefresh}
+                            />
+                          </PermissionGuard>
 
-                          <ConfirmDeleteDialog
-                            title="Hapus quotation?"
-                            description={`Quotation "${quotation.quotationNo}" akan dihapus permanen.`}
-                            triggerLabel="Hapus Quotation"
-                            loadingLabel="Menghapus Quotation..."
-                            onConfirm={() => handleDelete(quotation)}
-                          />
+                          <PermissionGuard
+                            permissions={permissions}
+                            required="crm.quotation.delete">
+                            <DropdownMenuSeparator />
+
+                            <ConfirmDeleteDialog
+                              title="Hapus quotation?"
+                              description={`Quotation "${quotation.quotationNo}" akan dihapus permanen.`}
+                              triggerLabel="Hapus Quotation"
+                              loadingLabel="Menghapus Quotation..."
+                              onConfirm={() => handleDelete(quotation)}
+                            />
+                          </PermissionGuard>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>

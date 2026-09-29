@@ -6,8 +6,10 @@ import {
   Mail,
   MessageCircle,
   MoreHorizontal,
+  Pencil,
   Phone,
   StickyNote,
+  Trash2,
   UserRound,
   XCircle,
 } from "lucide-react";
@@ -24,16 +26,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+import { PermissionGuard } from "@/components/shared/permission-guard";
 import { ConfirmDeleteDialog } from "./confirm-delete-dialog";
 import { CreateActivityModal } from "./create-activity-modal";
 import { EditActivityModal } from "./edit-activity-modal";
 
 interface ActivityTimelineProps {
   leadId: string;
+  permissions: string[];
   onRefreshLead?: () => void | Promise<void>;
 }
 
@@ -103,11 +108,11 @@ function formatDateTime(value: string) {
 
 export function ActivityTimeline({
   leadId,
+  permissions,
   onRefreshLead,
 }: ActivityTimelineProps) {
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const loadActivities = useCallback(async () => {
     try {
@@ -174,8 +179,11 @@ export function ActivityTimeline({
             Riwayat komunikasi dan follow-up terhadap lead.
           </p>
         </div>
-
-        <CreateActivityModal leadId={leadId} onSuccess={handleRefresh} />
+        <PermissionGuard
+          permissions={permissions}
+          required="crm.activity.create">
+          <CreateActivityModal leadId={leadId} onSuccess={handleRefresh} />
+        </PermissionGuard>
       </CardHeader>
 
       <CardContent>
@@ -232,32 +240,59 @@ export function ActivityTimeline({
                         </p>
 
                         <DropdownMenu>
-                          <DropdownMenuTrigger
-                            render={
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="size-8">
-                                <MoreHorizontal className="size-4" />
-                              </Button>
-                            }
-                          />
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-8">
+                              <MoreHorizontal className="size-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
 
-                          <DropdownMenuContent align="end">
-                            <EditActivityModal
-                              activity={activity}
-                              onSuccess={handleRefresh}
-                            />
+                          <DropdownMenuContent
+                            align="end"
+                            className="w-44 border bg-popover shadow-lg ring-1 ring-black/5">
+                            <PermissionGuard
+                              permissions={permissions}
+                              required="crm.activity.update">
+                              <EditActivityModal
+                                activity={activity}
+                                onSuccess={handleRefresh}
+                                trigger={
+                                  <DropdownMenuItem
+                                    onSelect={(event) =>
+                                      event.preventDefault()
+                                    }>
+                                    <Pencil className="mr-2 size-4" />
+                                    Edit Activity
+                                  </DropdownMenuItem>
+                                }
+                              />
+                            </PermissionGuard>
 
-                            <DropdownMenuSeparator />
+                            <PermissionGuard
+                              permissions={permissions}
+                              required="crm.activity.delete">
+                              <DropdownMenuSeparator />
 
-                            <ConfirmDeleteDialog
-                              title="Hapus activity?"
-                              description={`Activity "${activity.subject}" akan dihapus permanen.`}
-                              triggerLabel="Hapus Activity"
-                              loadingLabel="Menghapus Activity..."
-                              onConfirm={() => handleDelete(activity)}
-                            />
+                              <ConfirmDeleteDialog
+                                title="Hapus activity?"
+                                description={`Activity "${activity.subject}" akan dihapus permanen.`}
+                                triggerLabel="Hapus Activity"
+                                loadingLabel="Menghapus Activity..."
+                                onConfirm={() => handleDelete(activity)}
+                                trigger={
+                                  <DropdownMenuItem
+                                    variant="destructive"
+                                    onSelect={(event) =>
+                                      event.preventDefault()
+                                    }>
+                                    <Trash2 className="mr-2 size-4" />
+                                    Hapus Activity
+                                  </DropdownMenuItem>
+                                }
+                              />
+                            </PermissionGuard>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>

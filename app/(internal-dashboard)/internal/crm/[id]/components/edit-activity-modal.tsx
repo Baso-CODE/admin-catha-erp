@@ -1,7 +1,7 @@
 "use client";
-
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Pencil } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
@@ -40,6 +40,7 @@ import {
 interface EditActivityModalProps {
   activity: ActivityItem;
   onSuccess?: () => void | Promise<void>;
+  trigger?: ReactNode;
 }
 
 function formatDateTimeLocal(value?: string | null) {
@@ -66,6 +67,7 @@ function getDefaultValues(activity: ActivityItem): UpdateActivityFormValues {
 export function EditActivityModal({
   activity,
   onSuccess,
+  trigger,
 }: EditActivityModalProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -137,16 +139,13 @@ export function EditActivityModal({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger
-        render={
-          <button
-            type="button"
-            className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground">
-            <Pencil className="size-4" />
+      <DialogTrigger asChild>
+        {trigger ?? (
+          <Button variant="outline" size="sm">
             Edit Activity
-          </button>
-        }
-      />
+          </Button>
+        )}
+      </DialogTrigger>
 
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>

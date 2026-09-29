@@ -3,7 +3,6 @@
 import {
   ChevronLeft,
   ChevronRight,
-  Eye,
   FileText,
   MoreHorizontal,
 } from "lucide-react";
@@ -20,7 +19,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -33,12 +31,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+import { PermissionGuard } from "@/components/shared/permission-guard";
 import { ConfirmDeleteDialog } from "./confirm-delete-dialog";
 import { CreateProposalModal } from "./create-proposal-modal";
 import { EditProposalModal } from "./edit-proposal-modal";
+import { ProposalDetailModal } from "./proposal-detail-modal";
 
 interface ProposalTableProps {
   leadId: string;
+  permissions: string[];
   onRefreshLead?: () => void | Promise<void>;
 }
 
@@ -114,7 +115,11 @@ function getStatusBadge(status: string) {
   }
 }
 
-export function ProposalTable({ leadId, onRefreshLead }: ProposalTableProps) {
+export function ProposalTable({
+  leadId,
+  permissions,
+  onRefreshLead,
+}: ProposalTableProps) {
   const [proposals, setProposals] = useState<ProposalItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -190,8 +195,11 @@ export function ProposalTable({ leadId, onRefreshLead }: ProposalTableProps) {
             Kelola proposal yang dikirimkan kepada lead.
           </p>
         </div>
-
-        <CreateProposalModal leadId={leadId} onSuccess={handleRefresh} />
+        <PermissionGuard
+          permissions={permissions}
+          required="crm.proposal.create">
+          <CreateProposalModal leadId={leadId} onSuccess={handleRefresh} />
+        </PermissionGuard>
       </CardHeader>
 
       <CardContent className="space-y-4">
@@ -251,37 +259,42 @@ export function ProposalTable({ leadId, onRefreshLead }: ProposalTableProps) {
 
                     <TableCell className="text-right">
                       <DropdownMenu>
-                        <DropdownMenuTrigger
-                          render={
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="size-8">
-                              <MoreHorizontal className="size-4" />
-                            </Button>
-                          }
-                        />
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-8">
+                            <MoreHorizontal className="size-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
 
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
-                            <Eye className="mr-2 size-4" />
-                            Lihat Detail
-                          </DropdownMenuItem>
+                        <DropdownMenuContent
+                          align="end"
+                          className="min-w-44 border bg-popover p-1 shadow-lg">
+                          <ProposalDetailModal proposal={proposal} />
 
-                          <EditProposalModal
-                            proposal={proposal}
-                            onSuccess={handleRefresh}
-                          />
+                          <PermissionGuard
+                            permissions={permissions}
+                            required="crm.proposal.update">
+                            <EditProposalModal
+                              proposal={proposal}
+                              onSuccess={handleRefresh}
+                            />
+                          </PermissionGuard>
 
-                          <DropdownMenuSeparator />
+                          <PermissionGuard
+                            permissions={permissions}
+                            required="crm.proposal.delete">
+                            <DropdownMenuSeparator />
 
-                          <ConfirmDeleteDialog
-                            title="Hapus proposal?"
-                            description={`Proposal "${proposal.proposalNo}" akan dihapus permanen.`}
-                            triggerLabel="Hapus Proposal"
-                            loadingLabel="Menghapus Proposal..."
-                            onConfirm={() => handleDelete(proposal)}
-                          />
+                            <ConfirmDeleteDialog
+                              title="Hapus proposal?"
+                              description={`Proposal "${proposal.proposalNo}" akan dihapus permanen.`}
+                              triggerLabel="Hapus Proposal"
+                              loadingLabel="Menghapus Proposal..."
+                              onConfirm={() => handleDelete(proposal)}
+                            />
+                          </PermissionGuard>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>

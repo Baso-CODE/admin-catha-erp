@@ -1,7 +1,7 @@
 "use client";
 
-import { History, Search } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { ChevronLeft, ChevronRight, History, Search } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -9,6 +9,7 @@ import {
   userService,
 } from "@/app/services/userManagement.service";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -25,8 +26,20 @@ export default function AuditLogsPage() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 500);
 
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [logs, setLogs] = useState<AuditLogItem[]>([]);
+
+  const [meta, setMeta] = useState({
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 1,
+  });
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
 
   useEffect(() => {
     async function loadLogs() {
@@ -34,12 +47,14 @@ export default function AuditLogsPage() {
         setLoading(true);
 
         const res = await userService.getAuditLogs({
-          page: 1,
-          limit: 100,
+          search: debouncedSearch || undefined,
+          page,
+          limit: 10,
         });
 
         if (res.success) {
           setLogs(res.data);
+          setMeta(res.meta);
         }
       } catch (error) {
         toast.error("Gagal memuat audit log", {
@@ -54,38 +69,7 @@ export default function AuditLogsPage() {
     }
 
     void loadLogs();
-  }, []);
-
-  const filteredLogs = useMemo(() => {
-    const keyword = debouncedSearch.trim().toLowerCase();
-
-    if (!keyword) {
-      return logs;
-    }
-
-    return logs.filter((log) => {
-      const userName = log.user?.name?.toLowerCase() ?? "";
-      const userEmail = log.user?.email?.toLowerCase() ?? "";
-
-      const roles =
-        log.user?.roles
-          ?.map(({ role }) => `${role.code} ${role.name}`)
-          .join(" ")
-          .toLowerCase() ?? "";
-
-      const details = JSON.stringify(log.details ?? {}).toLowerCase();
-
-      return (
-        log.action.toLowerCase().includes(keyword) ||
-        log.entity.toLowerCase().includes(keyword) ||
-        log.entityId.toLowerCase().includes(keyword) ||
-        userName.includes(keyword) ||
-        userEmail.includes(keyword) ||
-        roles.includes(keyword) ||
-        details.includes(keyword)
-      );
-    });
-  }, [logs, debouncedSearch]);
+  }, [page, debouncedSearch]);
 
   const getActionBadge = (action: string) => {
     switch (action) {
@@ -196,8 +180,8 @@ export default function AuditLogsPage() {
                       Memuat riwayat log...
                     </TableCell>
                   </TableRow>
-                ) : filteredLogs.length > 0 ? (
-                  filteredLogs.map((log) => {
+                ) : logs.length > 0 ? (
+                  logs.map((log) => {
                     const roles = getUserRoles(log);
 
                     return (
@@ -280,6 +264,36 @@ export default function AuditLogsPage() {
                 )}
               </TableBody>
             </Table>
+          </div>
+
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground">
+              Total {meta.total} audit log
+            </p>
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={meta.page <= 1 || loading}
+                onClick={() => setPage(meta.page - 1)}>
+                <ChevronLeft className="mr-1 size-4" />
+                Sebelumnya
+              </Button>
+
+              <span className="px-2 text-sm text-muted-foreground">
+                Halaman {meta.page} dari {Math.max(meta.totalPages, 1)}
+              </span>
+
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={meta.page >= meta.totalPages || loading}
+                onClick={() => setPage(meta.page + 1)}>
+                Selanjutnya
+                <ChevronRight className="ml-1 size-4" />
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

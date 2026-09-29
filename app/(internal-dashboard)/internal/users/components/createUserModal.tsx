@@ -160,14 +160,12 @@ export function CreateUserModal({ onSuccess }: CreateUserModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger
-        render={
-          <Button className="gap-2">
-            <UserPlus className="size-4" />
-            <span>Tambah Pengguna</span>
-          </Button>
-        }
-      />
+      <DialogTrigger asChild>
+        <Button className="gap-2">
+          <UserPlus className="size-4" />
+          <span>Tambah Pengguna</span>
+        </Button>
+      </DialogTrigger>
 
       <DialogContent className="sm:max-w-120">
         <DialogHeader>
