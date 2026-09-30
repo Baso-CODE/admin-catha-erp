@@ -482,7 +482,7 @@ export default function UserManagementPage() {
             {!loading && meta.total > 0 && (
               <div className="flex flex-col gap-3 border-t px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-xs text-muted-foreground">
-                  Menampilkan{" "}
+                  Menampilkan
                   <span className="font-medium text-foreground">
                     {startItem}
                   </span>
@@ -491,7 +491,7 @@ export default function UserManagementPage() {
                   {" dari "}
                   <span className="font-medium text-foreground">
                     {meta.total}
-                  </span>{" "}
+                  </span>
                   pengguna
                 </p>
 

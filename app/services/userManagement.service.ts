@@ -213,6 +213,7 @@ export const userService = {
   },
 
   async getAuditLogs(params?: {
+    search?: string;
     entity?: string;
     entityId?: string;
     userId?: string;
@@ -221,6 +222,10 @@ export const userService = {
     limit?: number;
   }) {
     const searchParams = new URLSearchParams();
+
+    if (params?.search) {
+      searchParams.set("search", params.search);
+    }
 
     if (params?.entity) {
       searchParams.set("entity", params.entity);

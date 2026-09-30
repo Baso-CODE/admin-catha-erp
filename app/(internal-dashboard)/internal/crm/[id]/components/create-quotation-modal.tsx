@@ -94,14 +94,12 @@ export function CreateQuotationModal({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger
-        render={
-          <Button className="gap-2">
-            <FilePlus2 className="size-4" />
-            Buat Quotation
-          </Button>
-        }
-      />
+      <DialogTrigger asChild>
+        <Button className="gap-2">
+          <FilePlus2 className="size-4" />
+          Buat Quotation
+        </Button>
+      </DialogTrigger>
 
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>

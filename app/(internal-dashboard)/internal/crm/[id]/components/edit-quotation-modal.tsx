@@ -109,14 +109,12 @@ export function EditQuotationModal({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger
-        render={
-          <Button variant="ghost" size="sm" className="w-full justify-start">
-            <Pencil className="mr-2 size-4" />
-            Edit Quotation
-          </Button>
-        }
-      />
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm" className="w-full justify-start">
+          <Pencil className="mr-2 size-4" />
+          Edit Quotation
+        </Button>
+      </DialogTrigger>
 
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>

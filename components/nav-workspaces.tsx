@@ -1,10 +1,10 @@
-"use client"
+"use client";
 
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible"
+} from "@/components/ui/collapsible";
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -16,20 +16,20 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-} from "@/components/ui/sidebar"
-import { ChevronRightIcon, PlusIcon, MoreHorizontalIcon } from "lucide-react"
+} from "@/components/ui/sidebar";
+import { ChevronRightIcon, MoreHorizontalIcon, PlusIcon } from "lucide-react";
 
 export function NavWorkspaces({
   workspaces,
 }: {
   workspaces: {
-    name: string
-    emoji: React.ReactNode
+    name: string;
+    emoji: React.ReactNode;
     pages: {
-      name: string
-      emoji: React.ReactNode
-    }[]
-  }[]
+      name: string;
+      emoji: React.ReactNode;
+    }[];
+  }[];
 }) {
   return (
     <SidebarGroup>
@@ -39,29 +39,32 @@ export function NavWorkspaces({
           {workspaces.map((workspace) => (
             <Collapsible key={workspace.name}>
               <SidebarMenuItem>
-                <SidebarMenuButton render={<a href="#" />}>
-                  <span>{workspace.emoji}</span>
-                  <span>{workspace.name}</span>
+                <SidebarMenuButton asChild>
+                  <a href="#">
+                    <span>{workspace.emoji}</span>
+                    <span>{workspace.name}</span>
+                  </a>
                 </SidebarMenuButton>
                 <SidebarMenuAction
-                  render={<CollapsibleTrigger />}
-                  className="left-2 bg-sidebar-accent text-sidebar-accent-foreground data-open:rotate-90"
-                  showOnHover
-                >
-                  <ChevronRightIcon
-                  />
+                  asChild
+                  className="left-2 bg-sidebar-accent text-sidebar-accent-foreground data-[state=open]:rotate-90"
+                  showOnHover>
+                  <CollapsibleTrigger>
+                    <ChevronRightIcon />
+                  </CollapsibleTrigger>
                 </SidebarMenuAction>
                 <SidebarMenuAction showOnHover>
-                  <PlusIcon
-                  />
+                  <PlusIcon />
                 </SidebarMenuAction>
                 <CollapsibleContent>
                   <SidebarMenuSub>
                     {workspace.pages.map((page) => (
                       <SidebarMenuSubItem key={page.name}>
-                        <SidebarMenuSubButton render={<a href="#" />}>
-                          <span>{page.emoji}</span>
-                          <span>{page.name}</span>
+                        <SidebarMenuSubButton asChild>
+                          <a href="#">
+                            <span>{page.emoji}</span>
+                            <span>{page.name}</span>
+                          </a>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                     ))}
@@ -72,13 +75,12 @@ export function NavWorkspaces({
           ))}
           <SidebarMenuItem>
             <SidebarMenuButton className="text-sidebar-foreground/70">
-              <MoreHorizontalIcon
-              />
+              <MoreHorizontalIcon />
               <span>More</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>
-  )
+  );
 }

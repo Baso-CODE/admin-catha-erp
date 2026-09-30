@@ -143,14 +143,12 @@ export function CreateActivityModal({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger
-        render={
-          <Button className="gap-2">
-            <Plus className="size-4" />
-            Tambah Activity
-          </Button>
-        }
-      />
+      <DialogTrigger asChild>
+        <Button className="gap-2">
+          <Plus className="size-4" />
+          Tambah Activity
+        </Button>
+      </DialogTrigger>
 
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>

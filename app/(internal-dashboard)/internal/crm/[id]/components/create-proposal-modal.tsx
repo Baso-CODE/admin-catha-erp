@@ -112,14 +112,12 @@ export function CreateProposalModal({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger
-        render={
-          <Button className="gap-2">
-            <FilePlus2 className="size-4" />
-            Buat Proposal
-          </Button>
-        }
-      />
+      <DialogTrigger asChild>
+        <Button className="gap-2">
+          <FilePlus2 className="size-4" />
+          Buat Proposal
+        </Button>
+      </DialogTrigger>
 
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>

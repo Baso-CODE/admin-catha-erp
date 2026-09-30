@@ -28,16 +28,12 @@ function formatCurrency(value?: number | string | null) {
 export function LeadHeader({ lead }: LeadHeaderProps) {
   return (
     <div className="space-y-5">
-      <Button
-        variant="ghost"
-        size="sm"
-        render={
-          <Link href="/internal/crm">
-            <ArrowLeft className="mr-2 size-4" />
-            Kembali ke CRM
-          </Link>
-        }
-      />
+      <Button variant="ghost" size="default" asChild>
+        <Link href="/internal/crm">
+          <ArrowLeft className="mr-2 size-4" />
+          Kembali ke CRM
+        </Link>
+      </Button>
 
       <div className="flex flex-col gap-4 border-b pb-6 lg:flex-row lg:items-start lg:justify-between">
         <div className="space-y-3">

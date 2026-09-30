@@ -6,6 +6,8 @@ import { toast } from "sonner";
 
 import { LeadListItem, leadService } from "@/app/services/crm/lead.service";
 import { Button } from "@/components/ui/button";
+
+import { PermissionGuard } from "@/components/shared/permission-guard";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,6 +30,7 @@ import { LeadStatusBadge } from "./lead-status-badge";
 interface LeadTableProps {
   leads: LeadListItem[];
   loading: boolean;
+  permissions: string[];
   meta: {
     total: number;
     page: number;
@@ -55,6 +58,7 @@ function formatCurrency(value?: number | string | null) {
 export function LeadTable({
   leads,
   loading,
+  permissions,
   meta,
   onPageChange,
   onRefresh,
@@ -152,40 +156,39 @@ export function LeadTable({
 
                   <TableCell className="text-right">
                     <DropdownMenu>
-                      <DropdownMenuTrigger
-                        render={
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="size-8">
-                            <MoreHorizontal className="size-4" />
-                          </Button>
-                        }
-                      />
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="size-8">
+                          <MoreHorizontal className="size-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
 
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          render={
-                            <Link href={`/internal/crm/${lead.id}`}>
-                              <Eye className="mr-2 size-4" />
-                              Lihat Detail
-                            </Link>
-                          }
-                        />
+                      <DropdownMenuContent align="end" className="w-fit">
+                        <DropdownMenuItem asChild>
+                          <Link href={`/internal/crm/${lead.id}`}>
+                            <Eye className="mr-2 size-4" />
+                            Lihat Detail
+                          </Link>
+                        </DropdownMenuItem>
 
-                        <EditLeadModal lead={lead} onSuccess={onRefresh} />
+                        <PermissionGuard
+                          permissions={permissions}
+                          required="crm.lead.update">
+                          <EditLeadModal lead={lead} onSuccess={onRefresh} />
+                        </PermissionGuard>
 
-                        <DropdownMenuSeparator />
+                        <PermissionGuard
+                          permissions={permissions}
+                          required="crm.lead.delete">
+                          <DropdownMenuSeparator />
 
-                        <DropdownMenuSeparator />
-
-                        <ConfirmDeleteDialog
-                          title="Hapus lead?"
-                          description={`Lead "${lead.company}" akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.`}
-                          triggerLabel="Hapus Lead"
-                          loadingLabel="Menghapus Lead..."
-                          onConfirm={() => handleDelete(lead)}
-                        />
+                          <ConfirmDeleteDialog
+                            title="Hapus lead?"
+                            description={`Lead "${lead.company}" akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.`}
+                            triggerLabel="Hapus Lead"
+                            loadingLabel="Menghapus Lead..."
+                            onConfirm={() => handleDelete(lead)}
+                          />
+                        </PermissionGuard>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
