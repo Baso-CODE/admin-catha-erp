@@ -29,6 +29,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 
 const createUserSchema = z.object({
@@ -82,7 +83,7 @@ export function CreateUserModal({ onSuccess }: CreateUserModalProps) {
     control,
     name: "roleId",
   });
-  const selectedRole = roles.find((role) => role.id === selectedRoleId);
+
   useEffect(() => {
     if (!open) return;
 
@@ -227,23 +228,24 @@ export function CreateUserModal({ onSuccess }: CreateUserModalProps) {
           </div>
 
           <div className="space-y-2">
-            <Label>Role Akses</Label>
+            <Label htmlFor="roleId">Role Akses</Label>
 
             <Select
-              value={selectedRoleId}
+              value={selectedRoleId || undefined}
               disabled={loading || loadingRoles}
-              onValueChange={(value) =>
-                setValue("roleId", value ?? "", {
+              onValueChange={(value) => {
+                setValue("roleId", value, {
                   shouldValidate: true,
                   shouldDirty: true,
-                })
-              }>
-              <SelectTrigger className="w-full">
-                <span className={!selectedRole ? "text-muted-foreground" : ""}>
-                  {loadingRoles
-                    ? "Memuat role..."
-                    : (selectedRole?.name ?? "Pilih role akses")}
-                </span>
+                  shouldTouch: true,
+                });
+              }}>
+              <SelectTrigger id="roleId" className="w-full">
+                <SelectValue
+                  placeholder={
+                    loadingRoles ? "Memuat role..." : "Pilih role akses"
+                  }
+                />
               </SelectTrigger>
 
               <SelectContent>
