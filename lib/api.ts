@@ -1,7 +1,7 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-interface FetchOptions extends RequestInit {
-  body?: any;
+interface FetchOptions extends Omit<RequestInit, "body"> {
+  body?: unknown;
 }
 
 export async function apiClient<T>(
@@ -17,10 +17,11 @@ export async function apiClient<T>(
     ...options,
     headers,
     credentials: "include",
-    body: options.body ? JSON.stringify(options.body) : undefined,
+    body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
   };
 
   const response = await fetch(`${API_URL}${endpoint}`, config);
+
   const data = await response.json();
 
   if (!response.ok) {
