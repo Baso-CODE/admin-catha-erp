@@ -25,6 +25,7 @@ import {
   ReceiptTextIcon,
   SettingsIcon,
   UsersIcon,
+  WorkflowIcon,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import * as React from "react";
@@ -52,6 +53,20 @@ const data = {
       icon: <UsersIcon />,
       permission: "crm.lead.read",
     },
+    {
+      title: "Clients & Contracts",
+      url: "/internal/clients",
+      icon: <Building2Icon />,
+      permission: "client.read",
+    },
+
+    {
+      title: "Master Data & Workflow",
+      url: "/internal/master-data",
+      icon: <WorkflowIcon />,
+      permission: "master.service.read",
+    },
+
     {
       title: "Projects",
       url: "/internal/projects",
