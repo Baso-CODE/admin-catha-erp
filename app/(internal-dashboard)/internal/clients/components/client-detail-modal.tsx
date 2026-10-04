@@ -1,9 +1,10 @@
 "use client";
 
-import { Building2, Globe2, MapPin, User } from "lucide-react";
+import { ArrowUpRight, Building2, Globe2, MapPin, User } from "lucide-react";
 import { ReactNode } from "react";
 
 import { ClientItem } from "@/app/services/client.service";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -12,6 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import Link from "next/link";
 import { ClientStatusBadge } from "./client-status-badge";
 
 interface ClientDetailModalProps {
@@ -50,7 +52,6 @@ export function ClientDetailModal({ client, trigger }: ClientDetailModalProps) {
 
               <div>
                 <p className="text-xs text-muted-foreground">Industry</p>
-
                 <p className="text-sm">{client.industry ?? "-"}</p>
               </div>
             </div>
@@ -110,6 +111,15 @@ export function ClientDetailModal({ client, trigger }: ClientDetailModalProps) {
                 </div>
               </div>
             )}
+          </div>
+
+          <div className="flex justify-end border-t pt-4">
+            <Button asChild>
+              <Link href={`/internal/clients/${client.id}`}>
+                Lihat Detail Lengkap
+                <ArrowUpRight className="size-4" />
+              </Link>
+            </Button>
           </div>
         </div>
       </DialogContent>
