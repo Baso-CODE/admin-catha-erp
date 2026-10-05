@@ -1,5 +1,6 @@
 "use client";
 
+import { TASK_PERMISSIONS } from "@/app/(internal-dashboard)/internal/tasks/components/task-permissions";
 import { authService } from "@/app/services/auth.service";
 import { NavFavorites } from "@/components/nav-favorites";
 import { NavMain } from "@/components/nav-main";
@@ -18,11 +19,13 @@ import {
 } from "@/components/ui/sidebar";
 import {
   Building2Icon,
+  ClipboardList,
   FolderKanbanIcon,
   HelpCircleIcon,
   LayoutDashboardIcon,
   LogOut,
   ReceiptTextIcon,
+  Search,
   SettingsIcon,
   UsersIcon,
   WorkflowIcon,
@@ -30,6 +33,7 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 import * as React from "react";
 import { toast } from "sonner";
+import { SidebarSearch } from "./sidebar-search";
 
 const data = {
   teams: [
@@ -72,6 +76,13 @@ const data = {
       url: "/internal/projects",
       icon: <FolderKanbanIcon />,
       permission: "project.read",
+    },
+
+    {
+      title: "Task Management",
+      url: "/internal/tasks",
+      icon: <ClipboardList />,
+      permission: TASK_PERMISSIONS.READ,
     },
     {
       title: "Finance",
@@ -124,9 +135,9 @@ const data = {
         },
         {
           name: "Tracking Progress Task",
-          url: "/internal/projects",
+          url: "/internal/tasks",
           emoji: "📊",
-          permission: "project.read",
+          permission: TASK_PERMISSIONS.READ,
         },
         {
           name: "Invoice & Pembayaran",
@@ -146,6 +157,8 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 export function AppSidebar({ permissions, ...props }: AppSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+
+  const [searchOpen, setSearchOpen] = React.useState(false);
 
   const hasPermission = (permission?: string | null) => {
     if (!permission) return true;
@@ -193,6 +206,22 @@ export function AppSidebar({ permissions, ...props }: AppSidebarProps) {
     <Sidebar className="border-r-0" {...props}>
       <SidebarHeader>
         <TeamSwitcher teams={data.teams} />
+
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={() => setSearchOpen(true)}
+              tooltip="Cari menu"
+              className="justify-start gap-3">
+              <Search className="size-4" />
+
+              <span className="flex-1 text-left">Cari Menu</span>
+
+              <span className="text-xs text-muted-foreground">⌘K</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+
         <NavMain items={navMain} />
       </SidebarHeader>
 
@@ -217,6 +246,11 @@ export function AppSidebar({ permissions, ...props }: AppSidebarProps) {
       </SidebarFooter>
 
       <SidebarRail />
+      <SidebarSearch
+        open={searchOpen}
+        onOpenChange={setSearchOpen}
+        permissions={permissions}
+      />
     </Sidebar>
   );
 }
