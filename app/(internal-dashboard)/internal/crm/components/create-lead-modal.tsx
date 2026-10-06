@@ -10,7 +10,10 @@ import {
   CreateLeadPayload,
   leadService,
 } from "@/app/services/crm/lead.service";
-import { UserItem, userService } from "@/app/services/userManagement.service";
+import {
+  UserOptionItem,
+  userService,
+} from "@/app/services/userManagement.service";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -42,7 +45,7 @@ export function CreateLeadModal({ onSuccess }: CreateLeadModalProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingSales, setLoadingSales] = useState(false);
-  const [salesUsers, setSalesUsers] = useState<UserItem[]>([]);
+  const [salesUsers, setSalesUsers] = useState<UserOptionItem[]>([]);
 
   const {
     register,
@@ -83,21 +86,14 @@ export function CreateLeadModal({ onSuccess }: CreateLeadModalProps) {
       try {
         setLoadingSales(true);
 
-        const response = await userService.getUsers({
-          isActive: true,
-          page: 1,
+        const response = await userService.getUserOptions({
+          permissions: ["crm.lead.read", "crm.lead.update"],
           limit: 100,
         });
 
         if (!response.success) return;
 
-        const sales = response.data.filter((user) =>
-          user.roles.some(({ role }) =>
-            ["SALES_MANAGER", "SALES_EXECUTIVE"].includes(role.code),
-          ),
-        );
-
-        setSalesUsers(sales);
+        setSalesUsers(response.data);
       } catch (error) {
         toast.error("Gagal memuat Sales", {
           description:
@@ -350,7 +346,7 @@ export function CreateLeadModal({ onSuccess }: CreateLeadModalProps) {
                     ))
                   ) : (
                     <SelectItem value="__empty" disabled>
-                      Tidak ada Sales aktif
+                      Tidak ada user yang eligible
                     </SelectItem>
                   )}
                 </SelectContent>

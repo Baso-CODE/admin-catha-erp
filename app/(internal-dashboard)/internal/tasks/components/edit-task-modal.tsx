@@ -7,7 +7,10 @@ import {
   TaskStatus,
   taskService,
 } from "@/app/services/task.service";
-import { UserItem, userService } from "@/app/services/userManagement.service";
+import {
+  UserOptionItem,
+  userService,
+} from "@/app/services/userManagement.service";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -43,8 +46,7 @@ export function EditTaskModal({
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [projects, setProjects] = useState<any[]>([]);
-  const [users, setUsers] = useState<UserItem[]>([]);
-
+  const [users, setUsers] = useState<UserOptionItem[]>([]);
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description ?? "");
   const [projectId] = useState(task.projectId);
@@ -65,9 +67,8 @@ export function EditTaskModal({
             page: 1,
             limit: 100,
           }),
-          userService.getUsers({
-            isActive: true,
-            page: 1,
+          userService.getUserOptions({
+            permissions: ["task.read", "task.update"],
             limit: 100,
           }),
         ]);
@@ -76,10 +77,11 @@ export function EditTaskModal({
         setUsers(userResponse.data);
       } catch (error) {
         console.error(error);
+        toast.error("Gagal memuat option task");
       }
     };
 
-    fetchOptions();
+    void fetchOptions();
   }, [open]);
 
   useEffect(() => {
@@ -176,11 +178,17 @@ export function EditTaskModal({
                 <SelectValue placeholder="Pilih assignee" />
               </SelectTrigger>
               <SelectContent>
-                {users.map((user) => (
-                  <SelectItem key={user.id} value={user.id}>
-                    {user.name}
+                {users.length > 0 ? (
+                  users.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.name} - {user.email}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="__empty" disabled>
+                    Tidak ada user yang eligible
                   </SelectItem>
-                ))}
+                )}
               </SelectContent>
             </Select>
           </div>

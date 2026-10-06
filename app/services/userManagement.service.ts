@@ -9,6 +9,17 @@ export interface RoleItem {
   description?: string | null;
 }
 
+export interface UserOptionItem {
+  id: string;
+  name: string;
+  email: string;
+}
+
+export interface UserOptionsResponse {
+  success: boolean;
+  data: UserOptionItem[];
+}
+
 export interface UserItem {
   id: string;
   name: string;
@@ -255,6 +266,30 @@ export const userService = {
 
     return apiClient<AuditLogsResponse>(
       `/rbac/audit-logs${query ? `?${query}` : ""}`,
+      {
+        method: "GET",
+      },
+    );
+  },
+  async getUserOptions(params: {
+    permissions: string[];
+    search?: string;
+    limit?: number;
+  }) {
+    const searchParams = new URLSearchParams();
+
+    searchParams.set("permissions", params.permissions.join(","));
+
+    if (params.search) {
+      searchParams.set("search", params.search);
+    }
+
+    if (params.limit) {
+      searchParams.set("limit", String(params.limit));
+    }
+
+    return apiClient<UserOptionsResponse>(
+      `/rbac/users/options?${searchParams.toString()}`,
       {
         method: "GET",
       },
