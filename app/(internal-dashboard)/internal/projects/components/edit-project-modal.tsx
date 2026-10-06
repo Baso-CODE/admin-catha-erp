@@ -14,7 +14,10 @@ import {
   ProjectStatus,
   projectService,
 } from "@/app/services/project.service";
-import { userService } from "@/app/services/userManagement.service";
+import {
+  UserOptionItem,
+  userService,
+} from "@/app/services/userManagement.service";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -35,18 +38,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-
-interface UserItem {
-  id: string;
-  name: string;
-  email: string;
-  isActive: boolean;
-}
-
-interface UserListResponse {
-  success: boolean;
-  data: UserItem[];
-}
 
 const schema = z
   .object({
@@ -99,7 +90,7 @@ export function EditProjectModal({
   const [open, setOpen] = useState(false);
   const [clients, setClients] = useState<ClientItem[]>([]);
   const [contracts, setContracts] = useState<ContractItem[]>([]);
-  const [projectManagers, setProjectManagers] = useState<UserItem[]>([]);
+  const [projectManagers, setProjectManagers] = useState<UserOptionItem[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [isLoadingContracts, setIsLoadingContracts] = useState(false);
 
@@ -163,16 +154,14 @@ export function EditProjectModal({
             page: 1,
             limit: 100,
           }),
-          userService.getUsers({
-            isActive: true,
-            page: 1,
+          userService.getUserOptions({
+            permissions: ["project.read", "project.update"],
             limit: 100,
           }),
         ]);
 
         setClients(clientResponse.data);
-
-        setProjectManagers(userResponse.data.filter((user) => user.isActive));
+        setProjectManagers(userResponse.data);
       } catch (error) {
         toast.error("Gagal mengambil data project.", {
           description:
@@ -187,7 +176,6 @@ export function EditProjectModal({
 
     void loadInitialData();
   }, [open]);
-
   useEffect(() => {
     if (!open || !clientId) {
       setContracts([]);

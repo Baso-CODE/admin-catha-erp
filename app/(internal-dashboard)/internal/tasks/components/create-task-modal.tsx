@@ -11,7 +11,10 @@ import {
   taskService,
 } from "@/app/services/task.service";
 
-import { UserItem, userService } from "@/app/services/userManagement.service";
+import {
+  UserOptionItem,
+  userService,
+} from "@/app/services/userManagement.service";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -40,8 +43,7 @@ export function CreateTaskModal({ onSuccess }: CreateTaskModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [projects, setProjects] = useState<any[]>([]);
-  const [users, setUsers] = useState<UserItem[]>([]);
-
+  const [users, setUsers] = useState<UserOptionItem[]>([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [projectId, setProjectId] = useState("");
@@ -60,9 +62,8 @@ export function CreateTaskModal({ onSuccess }: CreateTaskModalProps) {
             page: 1,
             limit: 100,
           }),
-          userService.getUsers({
-            isActive: true,
-            page: 1,
+          userService.getUserOptions({
+            permissions: ["task.read", "task.update"],
             limit: 100,
           }),
         ]);
@@ -71,10 +72,11 @@ export function CreateTaskModal({ onSuccess }: CreateTaskModalProps) {
         setUsers(userResponse.data);
       } catch (error) {
         console.error("Gagal mengambil option task:", error);
+        toast.error("Gagal memuat option task");
       }
     };
 
-    fetchOptions();
+    void fetchOptions();
   }, [open]);
 
   const resetForm = () => {
@@ -194,11 +196,17 @@ export function CreateTaskModal({ onSuccess }: CreateTaskModalProps) {
               </SelectTrigger>
 
               <SelectContent>
-                {users.map((user) => (
-                  <SelectItem key={user.id} value={user.id}>
-                    {user.name}
+                {users.length > 0 ? (
+                  users.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.name} - {user.email}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="__empty" disabled>
+                    Tidak ada user yang eligible
                   </SelectItem>
-                ))}
+                )}
               </SelectContent>
             </Select>
           </div>

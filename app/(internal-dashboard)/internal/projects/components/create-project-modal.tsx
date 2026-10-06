@@ -10,7 +10,10 @@ import { z } from "zod";
 import { ClientItem, clientService } from "@/app/services/client.service";
 import { ContractItem, contractService } from "@/app/services/contract.service";
 import { ProjectStatus, projectService } from "@/app/services/project.service";
-import { userService } from "@/app/services/userManagement.service";
+import {
+  UserOptionItem,
+  userService,
+} from "@/app/services/userManagement.service";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -74,7 +77,7 @@ export function CreateProjectModal({ onSuccess }: CreateProjectModalProps) {
   const [open, setOpen] = useState(false);
   const [clients, setClients] = useState<ClientItem[]>([]);
   const [contracts, setContracts] = useState<ContractItem[]>([]);
-  const [projectManagers, setProjectManagers] = useState<UserItem[]>([]);
+  const [projectManagers, setProjectManagers] = useState<UserOptionItem[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [isLoadingContracts, setIsLoadingContracts] = useState(false);
 
@@ -118,16 +121,14 @@ export function CreateProjectModal({ onSuccess }: CreateProjectModalProps) {
             page: 1,
             limit: 100,
           }),
-          userService.getUsers({
-            isActive: true,
-            page: 1,
+          userService.getUserOptions({
+            permissions: ["project.read", "project.update"],
             limit: 100,
           }),
         ]);
 
         setClients(clientResponse.data);
-
-        setProjectManagers(userResponse.data.filter((user) => user.isActive));
+        setProjectManagers(userResponse.data);
       } catch (error) {
         toast.error("Gagal mengambil data project.", {
           description:
@@ -362,11 +363,17 @@ export function CreateProjectModal({ onSuccess }: CreateProjectModalProps) {
               </SelectTrigger>
 
               <SelectContent>
-                {projectManagers.map((user) => (
-                  <SelectItem key={user.id} value={user.id}>
-                    {user.name} - {user.email}
+                {projectManagers.length > 0 ? (
+                  projectManagers.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.name} - {user.email}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="__empty" disabled>
+                    Tidak ada user yang eligible
                   </SelectItem>
-                ))}
+                )}
               </SelectContent>
             </Select>
 

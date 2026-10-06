@@ -77,9 +77,8 @@ export function TasksClient({ permissions }: TasksClientProps) {
           page: 1,
           limit: 100,
         }),
-        userService.getUsers({
-          isActive: true,
-          page: 1,
+        userService.getUserOptions({
+          permissions: ["task.read", "task.update"],
           limit: 100,
         }),
       ]);

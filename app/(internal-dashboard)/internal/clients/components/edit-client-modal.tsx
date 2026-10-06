@@ -13,7 +13,10 @@ import {
   UpdateClientPayload,
   clientService,
 } from "@/app/services/client.service";
-import { userService } from "@/app/services/userManagement.service";
+import {
+  UserOptionItem,
+  userService,
+} from "@/app/services/userManagement.service";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -57,12 +60,6 @@ const editClientSchema = z.object({
 
 type EditClientFormValues = z.infer<typeof editClientSchema>;
 
-interface AccountManagerOption {
-  id: string;
-  name: string;
-  email: string;
-}
-
 interface EditClientModalProps {
   client: ClientItem;
   onSuccess?: () => void | Promise<void>;
@@ -77,9 +74,7 @@ export function EditClientModal({
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingUsers, setLoadingUsers] = useState(false);
-  const [accountManagers, setAccountManagers] = useState<
-    AccountManagerOption[]
-  >([]);
+  const [accountManagers, setAccountManagers] = useState<UserOptionItem[]>([]);
 
   const {
     register,
@@ -128,24 +123,13 @@ export function EditClientModal({
       try {
         setLoadingUsers(true);
 
-        const response = await userService.getUsers({
-          isActive: true,
-          page: 1,
+        const response = await userService.getUserOptions({
+          permissions: ["client.read", "client.update"],
           limit: 100,
         });
 
         if (response.success) {
-          const managers = response.data
-            .filter((user) =>
-              user.roles.some(({ role }) => role.code === "ACCOUNT_MANAGER"),
-            )
-            .map((user) => ({
-              id: user.id,
-              name: user.name,
-              email: user.email,
-            }));
-
-          setAccountManagers(managers);
+          setAccountManagers(response.data);
         }
       } catch (error) {
         toast.error("Gagal memuat Account Manager", {
@@ -348,11 +332,17 @@ export function EditClientModal({
                 </SelectTrigger>
 
                 <SelectContent>
-                  {accountManagers.map((manager) => (
-                    <SelectItem key={manager.id} value={manager.id}>
-                      {manager.name}
+                  {accountManagers.length > 0 ? (
+                    accountManagers.map((manager) => (
+                      <SelectItem key={manager.id} value={manager.id}>
+                        {manager.name} - {manager.email}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="__empty" disabled>
+                      Tidak ada user yang eligible
                     </SelectItem>
-                  ))}
+                  )}
                 </SelectContent>
               </Select>
 
