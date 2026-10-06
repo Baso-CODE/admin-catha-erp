@@ -15,6 +15,16 @@ export interface TaskAssignee {
   email: string;
 }
 
+export interface TaskActivityResponse {
+  data: TaskActivityItem[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
 export interface TaskActivityItem {
   id: string;
   action: string;
@@ -420,11 +430,13 @@ export const taskService = {
     return response.data;
   },
 
-  async getTaskActivity(taskId: string): Promise<TaskActivityItem[]> {
-    const response = await apiClient<ApiResponse<TaskActivityItem[]>>(
-      `/tasks/${taskId}/activity`,
+  async getTaskActivity(
+    taskId: string,
+    page = 1,
+    limit = 20,
+  ): Promise<TaskActivityResponse> {
+    return apiClient<TaskActivityResponse>(
+      `/tasks/${taskId}/activity?page=${page}&limit=${limit}`,
     );
-
-    return response.data;
   },
 };
