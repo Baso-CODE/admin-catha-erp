@@ -114,6 +114,14 @@ const data = {
       emoji: "🛡️",
       permission: "admin.user.read",
     },
+
+    {
+      name: "Team Management",
+      url: "/internal/teams",
+      emoji: "👥",
+      permission: "admin.team.read",
+    },
+
     {
       name: "Audit Logs",
       url: "/internal/audit-logs",
