@@ -1,14 +1,9 @@
 import { redirect } from "next/navigation";
 
 import { getAuthDestination } from "@/app/lib/auth/get-auth-destination";
-import LoginForm from "./login-form";
 
-export default async function LoginPage() {
+export default async function PostLoginPage() {
   const destination = await getAuthDestination();
 
-  if (destination !== "/login") {
-    redirect(destination);
-  }
-
-  return <LoginForm />;
+  redirect(destination);
 }

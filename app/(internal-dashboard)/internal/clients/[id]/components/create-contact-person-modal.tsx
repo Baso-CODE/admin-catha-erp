@@ -2,12 +2,13 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Plus } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
 
 import {
+  ClientPortalUserOption,
   CreateContactPersonPayload,
   contactPersonService,
 } from "@/app/services/contactPerson.service";
@@ -45,6 +46,7 @@ const createContactPersonSchema = z.object({
   }),
   phone: z.string().trim().optional(),
   mobile: z.string().trim().optional(),
+  userId: z.string().nullable().optional(),
   isPrimary: z.boolean(),
   status: z.enum(["ACTIVE", "INACTIVE"]),
 });
@@ -62,6 +64,8 @@ export function CreateContactPersonModal({
 }: CreateContactPersonModalProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [portalUsers, setPortalUsers] = useState<ClientPortalUserOption[]>([]);
 
   const {
     register,
@@ -79,6 +83,7 @@ export function CreateContactPersonModal({
       email: "",
       phone: "",
       mobile: "",
+      userId: null,
       isPrimary: false,
       status: "ACTIVE",
     },
@@ -94,6 +99,36 @@ export function CreateContactPersonModal({
     name: "isPrimary",
   });
 
+  const userId = useWatch({
+    control,
+    name: "userId",
+  });
+
+  useEffect(() => {
+    if (!open) return;
+
+    const loadPortalUsers = async () => {
+      try {
+        setLoadingUsers(true);
+
+        const response = await contactPersonService.getPortalUserOptions();
+
+        setPortalUsers(response.data);
+      } catch (error) {
+        toast.error("Gagal mengambil user Client Portal", {
+          description:
+            error instanceof Error
+              ? error.message
+              : "Terjadi kesalahan saat mengambil user.",
+        });
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+
+    void loadPortalUsers();
+  }, [open]);
+
   const handleOpenChange = (value: boolean) => {
     setOpen(value);
 
@@ -105,9 +140,12 @@ export function CreateContactPersonModal({
         email: "",
         phone: "",
         mobile: "",
+        userId: null,
         isPrimary: false,
         status: "ACTIVE",
       });
+
+      setPortalUsers([]);
     }
   };
 
@@ -123,6 +161,7 @@ export function CreateContactPersonModal({
         email: values.email.trim(),
         phone: values.phone?.trim() || undefined,
         mobile: values.mobile?.trim() || undefined,
+        userId: values.userId || null,
         isPrimary: values.isPrimary,
         status: values.status,
       };
@@ -256,6 +295,43 @@ export function CreateContactPersonModal({
           </div>
 
           <div className="space-y-2">
+            <Label>Akun Login Client Portal</Label>
+
+            <Select
+              value={userId ?? "NONE"}
+              disabled={loading || loadingUsers}
+              onValueChange={(value) =>
+                setValue("userId", value === "NONE" ? null : value, {
+                  shouldValidate: true,
+                  shouldDirty: true,
+                })
+              }>
+              <SelectTrigger className="w-full">
+                <SelectValue
+                  placeholder={
+                    loadingUsers ? "Memuat user..." : "Pilih akun Client Portal"
+                  }
+                />
+              </SelectTrigger>
+
+              <SelectContent>
+                <SelectItem value="NONE">Tidak dihubungkan</SelectItem>
+
+                {portalUsers.map((user) => (
+                  <SelectItem key={user.id} value={user.id}>
+                    {user.name} - {user.email}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <p className="text-xs text-muted-foreground">
+              User yang dipilih akan menggunakan akun ini untuk login ke Client
+              Portal.
+            </p>
+          </div>
+
+          <div className="space-y-2">
             <Label>Status</Label>
 
             <Select
@@ -312,7 +388,7 @@ export function CreateContactPersonModal({
               Batal
             </Button>
 
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading || loadingUsers}>
               {loading && <Loader2 className="mr-2 size-4 animate-spin" />}
               Simpan Contact
             </Button>

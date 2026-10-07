@@ -8,6 +8,13 @@ export interface ContactPersonClient {
   status?: ClientStatus;
 }
 
+export interface ContactPersonPortalUser {
+  id: string;
+  name: string;
+  email: string;
+  isActive: boolean;
+}
+
 export interface ContactPersonItem {
   id: string;
   clientId: string;
@@ -17,6 +24,8 @@ export interface ContactPersonItem {
   email: string;
   phone?: string | null;
   mobile?: string | null;
+  userId?: string | null;
+  user?: ContactPersonPortalUser | null;
   isPrimary: boolean;
   status: ClientStatus;
   client?: ContactPersonClient;
@@ -49,6 +58,7 @@ export interface CreateContactPersonPayload {
   email: string;
   phone?: string;
   mobile?: string;
+  userId?: string | null;
   isPrimary?: boolean;
   status?: ClientStatus;
 }
@@ -61,6 +71,7 @@ export interface UpdateContactPersonPayload {
   email?: string;
   phone?: string;
   mobile?: string;
+  userId?: string | null;
   isPrimary?: boolean;
   status?: ClientStatus;
 }
@@ -71,6 +82,13 @@ export interface ContactPersonQuery {
   status?: ClientStatus;
   page?: number;
   limit?: number;
+}
+
+export interface ClientPortalUserOption {
+  id: string;
+  name: string;
+  email: string;
+  isActive: boolean;
 }
 
 function buildQuery(params?: ContactPersonQuery) {
@@ -112,6 +130,21 @@ export const contactPersonService = {
 
   getContactPersonById(id: string) {
     return apiClient<ContactPersonDetailResponse>(`/contact-persons/${id}`);
+  },
+
+  getPortalUserOptions(currentUserId?: string) {
+    const query = new URLSearchParams();
+
+    if (currentUserId) {
+      query.set("currentUserId", currentUserId);
+    }
+
+    const suffix = query.toString() ? `?${query.toString()}` : "";
+
+    return apiClient<{
+      success: boolean;
+      data: ClientPortalUserOption[];
+    }>(`/clients/contact-persons/portal-users/options${suffix}`);
   },
 
   createContactPerson(payload: CreateContactPersonPayload) {

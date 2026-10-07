@@ -1,23 +1,14 @@
-import { getCurrentUser } from "@/app/lib/auth/get-current-user";
+import { requireInternalUser } from "@/app/lib/auth/require-internal-user";
 import { AppSidebar } from "@/components/app-sidebar";
 import { NotificationBell } from "@/components/notification-bell";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { redirect } from "next/navigation";
 
 export default async function InternalLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const user = await getCurrentUser();
-
-  if (!user) {
-    redirect("/login");
-  }
-
-  if (user.roles.includes("CLIENT")) {
-    redirect("/portal");
-  }
+  const user = await requireInternalUser();
 
   return (
     <SidebarProvider>
