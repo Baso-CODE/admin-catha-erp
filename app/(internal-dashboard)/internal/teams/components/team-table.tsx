@@ -217,7 +217,7 @@ export function TeamTable({ permissions }: TeamTableProps) {
                         </Button>
                       </DropdownMenuTrigger>
 
-                      <DropdownMenuContent align="end">
+                      <DropdownMenuContent align="end" className="min-w-40">
                         <PermissionGuard
                           permissions={permissions}
                           required="admin.team.manage_member">

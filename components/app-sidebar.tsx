@@ -121,7 +121,12 @@ const data = {
       emoji: "👥",
       permission: "admin.team.read",
     },
-
+    {
+      name: "Role & Permission",
+      url: "/internal/roles",
+      emoji: "🔐",
+      permission: "admin.role.read",
+    },
     {
       name: "Audit Logs",
       url: "/internal/audit-logs",
