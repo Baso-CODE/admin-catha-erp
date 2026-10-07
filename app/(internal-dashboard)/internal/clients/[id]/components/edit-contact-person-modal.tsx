@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import * as z from "zod";
 
 import {
+  ClientPortalUserOption,
   ContactPersonItem,
   UpdateContactPersonPayload,
   contactPersonService,
@@ -46,6 +47,7 @@ const editContactPersonSchema = z.object({
   }),
   phone: z.string().trim().optional(),
   mobile: z.string().trim().optional(),
+  userId: z.string().nullable().optional(),
   isPrimary: z.boolean(),
   status: z.enum(["ACTIVE", "INACTIVE"]),
 });
@@ -65,6 +67,8 @@ export function EditContactPersonModal({
 }: EditContactPersonModalProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [portalUsers, setPortalUsers] = useState<ClientPortalUserOption[]>([]);
 
   const {
     register,
@@ -82,6 +86,7 @@ export function EditContactPersonModal({
       email: contact.email,
       phone: contact.phone ?? "",
       mobile: contact.mobile ?? "",
+      userId: contact.userId ?? null,
       isPrimary: contact.isPrimary,
       status: contact.status,
     },
@@ -97,6 +102,11 @@ export function EditContactPersonModal({
     name: "isPrimary",
   });
 
+  const userId = useWatch({
+    control,
+    name: "userId",
+  });
+
   useEffect(() => {
     if (!open) return;
 
@@ -107,9 +117,33 @@ export function EditContactPersonModal({
       email: contact.email,
       phone: contact.phone ?? "",
       mobile: contact.mobile ?? "",
+      userId: contact.userId ?? null,
       isPrimary: contact.isPrimary,
       status: contact.status,
     });
+
+    const loadPortalUsers = async () => {
+      try {
+        setLoadingUsers(true);
+
+        const response = await contactPersonService.getPortalUserOptions(
+          contact.userId ?? undefined,
+        );
+
+        setPortalUsers(response.data);
+      } catch (error) {
+        toast.error("Gagal mengambil user Client Portal", {
+          description:
+            error instanceof Error
+              ? error.message
+              : "Terjadi kesalahan saat mengambil user.",
+        });
+      } finally {
+        setLoadingUsers(false);
+      }
+    };
+
+    void loadPortalUsers();
   }, [open, contact, reset]);
 
   const handleOpenChange = (value: boolean) => {
@@ -123,9 +157,12 @@ export function EditContactPersonModal({
         email: contact.email,
         phone: contact.phone ?? "",
         mobile: contact.mobile ?? "",
+        userId: contact.userId ?? null,
         isPrimary: contact.isPrimary,
         status: contact.status,
       });
+
+      setPortalUsers([]);
     }
   };
 
@@ -140,6 +177,7 @@ export function EditContactPersonModal({
         email: values.email.trim(),
         phone: values.phone?.trim() || undefined,
         mobile: values.mobile?.trim() || undefined,
+        userId: values.userId ?? null,
         isPrimary: values.isPrimary,
         status: values.status,
       };
@@ -272,6 +310,54 @@ export function EditContactPersonModal({
           </div>
 
           <div className="space-y-2">
+            <Label>Akun Login Client Portal</Label>
+
+            <Select
+              value={userId ?? "NONE"}
+              disabled={loading || loadingUsers}
+              onValueChange={(value) =>
+                setValue("userId", value === "NONE" ? null : value, {
+                  shouldValidate: true,
+                  shouldDirty: true,
+                })
+              }>
+              <SelectTrigger className="w-full">
+                <SelectValue
+                  placeholder={
+                    loadingUsers ? "Memuat user..." : "Pilih akun Client Portal"
+                  }
+                />
+              </SelectTrigger>
+
+              <SelectContent>
+                <SelectItem value="NONE">Tidak dihubungkan</SelectItem>
+
+                {portalUsers.map((user) => (
+                  <SelectItem key={user.id} value={user.id}>
+                    {user.name} - {user.email}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {contact.user && (
+              <p className="text-xs text-muted-foreground">
+                Saat ini terhubung ke{" "}
+                <span className="font-medium text-foreground">
+                  {contact.user.name}
+                </span>{" "}
+                ({contact.user.email})
+              </p>
+            )}
+
+            {!contact.user && (
+              <p className="text-xs text-muted-foreground">
+                Contact ini belum memiliki akun login Client Portal.
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
             <Label>Status</Label>
 
             <Select
@@ -330,7 +416,7 @@ export function EditContactPersonModal({
               Batal
             </Button>
 
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading || loadingUsers}>
               {loading && <Loader2 className="mr-2 size-4 animate-spin" />}
               Simpan Perubahan
             </Button>
