@@ -124,7 +124,7 @@ export function NotificationBell() {
       <PopoverContent
         align="end"
         sideOffset={8}
-        className="w-[380px] overflow-hidden p-0">
+        className="w-95 overflow-hidden p-0">
         <div className="flex items-center justify-between border-b px-4 py-3">
           <div>
             <p className="font-semibold">Notifications</p>
@@ -150,7 +150,7 @@ export function NotificationBell() {
           </Button>
         </div>
 
-        <div className="max-h-[420px] overflow-y-auto">
+        <div className="max-h-105 overflow-y-auto">
           {loading ? (
             <div className="flex items-center justify-center py-10">
               <Loader2 className="size-5 animate-spin text-muted-foreground" />
