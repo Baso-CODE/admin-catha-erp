@@ -86,9 +86,9 @@ const data = {
     },
     {
       title: "Finance",
-      url: "/internal/finance",
+      url: "/internal/finance/invoices",
       icon: <ReceiptTextIcon />,
-      permission: "finance.invoice.read",
+      permission: "invoice.read",
     },
   ],
 
@@ -153,10 +153,16 @@ const data = {
           permission: TASK_PERMISSIONS.READ,
         },
         {
-          name: "Invoice & Pembayaran",
-          url: "/internal/finance",
+          name: "Invoice",
+          url: "/internal/finance/invoices",
+          emoji: "🧾",
+          permission: "invoice.read",
+        },
+        {
+          name: "Pembayaran",
+          url: "/internal/finance/payments",
           emoji: "💰",
-          permission: "finance.invoice.read",
+          permission: "payment.read",
         },
       ],
     },
