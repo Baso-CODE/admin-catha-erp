@@ -18,6 +18,8 @@ import {
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 import { ChevronRightIcon, MoreHorizontalIcon, PlusIcon } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export function NavWorkspaces({
   workspaces,
@@ -28,23 +30,31 @@ export function NavWorkspaces({
     pages: {
       name: string;
       emoji: React.ReactNode;
+      url: string;
     }[];
   }[];
 }) {
+  const pathname = usePathname();
+
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Workspaces</SidebarGroupLabel>
+
       <SidebarGroupContent>
         <SidebarMenu>
           {workspaces.map((workspace) => (
-            <Collapsible key={workspace.name}>
+            <Collapsible
+              key={workspace.name}
+              defaultOpen={workspace.pages.some(
+                (page) =>
+                  pathname === page.url || pathname.startsWith(`${page.url}/`),
+              )}>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <a href="#">
-                    <span>{workspace.emoji}</span>
-                    <span>{workspace.name}</span>
-                  </a>
+                <SidebarMenuButton>
+                  <span>{workspace.emoji}</span>
+                  <span>{workspace.name}</span>
                 </SidebarMenuButton>
+
                 <SidebarMenuAction
                   asChild
                   className="left-2 bg-sidebar-accent text-sidebar-accent-foreground data-[state=open]:rotate-90"
@@ -53,26 +63,35 @@ export function NavWorkspaces({
                     <ChevronRightIcon />
                   </CollapsibleTrigger>
                 </SidebarMenuAction>
+
                 <SidebarMenuAction showOnHover>
                   <PlusIcon />
                 </SidebarMenuAction>
+
                 <CollapsibleContent>
                   <SidebarMenuSub>
-                    {workspace.pages.map((page) => (
-                      <SidebarMenuSubItem key={page.name}>
-                        <SidebarMenuSubButton asChild>
-                          <a href="#">
-                            <span>{page.emoji}</span>
-                            <span>{page.name}</span>
-                          </a>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                    ))}
+                    {workspace.pages.map((page) => {
+                      const isActive =
+                        pathname === page.url ||
+                        pathname.startsWith(`${page.url}/`);
+
+                      return (
+                        <SidebarMenuSubItem key={page.name}>
+                          <SidebarMenuSubButton asChild isActive={isActive}>
+                            <Link href={page.url}>
+                              <span>{page.emoji}</span>
+                              <span>{page.name}</span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      );
+                    })}
                   </SidebarMenuSub>
                 </CollapsibleContent>
               </SidebarMenuItem>
             </Collapsible>
           ))}
+
           <SidebarMenuItem>
             <SidebarMenuButton className="text-sidebar-foreground/70">
               <MoreHorizontalIcon />
