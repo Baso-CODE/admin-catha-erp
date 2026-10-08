@@ -14,7 +14,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CalendarClock, Eye, Loader2, Play, RefreshCw } from "lucide-react";
+import {
+  Activity,
+  CalendarClock,
+  Eye,
+  Loader2,
+  Play,
+  RefreshCw,
+} from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -162,6 +169,12 @@ export default function RecurringBillingPageClient({ permissions }: Props) {
               </Link>
             </Button>
           )}
+          <Button variant="outline" asChild>
+            <Link href="/internal/finance/recurring-billing/jobs">
+              <Activity className="size-4" />
+              Job Monitoring
+            </Link>
+          </Button>
         </div>
       </div>
 
