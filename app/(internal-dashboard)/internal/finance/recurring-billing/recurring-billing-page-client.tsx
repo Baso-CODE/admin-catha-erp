@@ -122,26 +122,43 @@ export default function RecurringBillingPageClient({ permissions }: Props) {
     }
   };
 
-  const handleGenerate = async (item: RecurringBilling) => {
-    if (
-      !window.confirm(
-        `Generate invoice untuk kontrak ${item.contract.contractNo}?`,
-      )
-    )
-      return;
+  const handleGenerate = (item: RecurringBilling) => {
+    if (processingId) return;
 
-    try {
-      setProcessingId(item.id);
-      const result = await recurringBillingService.generateInvoice(item.id);
-      toast.success(`Invoice ${result.data.invoiceNo} berhasil dibuat.`);
-      setRefreshKey((prev) => prev + 1);
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Gagal membuat invoice.",
-      );
-    } finally {
-      setProcessingId(null);
-    }
+    toast.warning("Konfirmasi Generate Invoice", {
+      description: `Generate invoice untuk kontrak ${item.contract.contractNo}?`,
+      duration: 10000,
+      action: {
+        label: "Ya, Generate",
+        onClick: async () => {
+          if (processingId) return;
+
+          try {
+            setProcessingId(item.id);
+
+            const result = await recurringBillingService.generateInvoice(
+              item.id,
+            );
+
+            toast.success(`Invoice ${result.data.invoiceNo} berhasil dibuat.`);
+            setRefreshKey((prev) => prev + 1);
+          } catch (error) {
+            toast.error("Gagal membuat invoice.", {
+              description:
+                error instanceof Error
+                  ? error.message
+                  : "Terjadi kesalahan pada server.",
+            });
+          } finally {
+            setProcessingId(null);
+          }
+        },
+      },
+      cancel: {
+        label: "Batal",
+        onClick: () => toast.dismiss(),
+      },
+    });
   };
 
   return (

@@ -33,6 +33,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useDebounce } from "@/hooks/useDebounce";
+import { ConfirmDeleteDialog } from "../../crm/[id]/components/confirm-delete-dialog";
 import { CreateMasterServiceModal } from "./create-master-service-modal";
 import { EditMasterServiceModal } from "./edit-master-service-modal";
 import { MasterServiceDetailModal } from "./master-service-detail-modal";
@@ -87,9 +88,7 @@ export function MasterServiceTable({ permissions }: MasterServiceTableProps) {
   const handleDelete = async (id: string) => {
     try {
       await masterServiceService.remove(id);
-
       toast.success("Master service berhasil dihapus.");
-
       await loadData();
     } catch (error) {
       toast.error("Gagal menghapus master service.", {
@@ -98,6 +97,7 @@ export function MasterServiceTable({ permissions }: MasterServiceTableProps) {
             ? error.message
             : "Terjadi kesalahan pada server.",
       });
+      throw error;
     }
   };
   return (
@@ -237,22 +237,24 @@ export function MasterServiceTable({ permissions }: MasterServiceTableProps) {
                         <PermissionGuard
                           permissions={permissions}
                           required="master.service.delete">
-                          <DropdownMenuItem
-                            onSelect={(event) => {
-                              event.preventDefault();
-
-                              const confirmed = window.confirm(
-                                `Hapus master service "${item.name}"?`,
-                              );
-
-                              if (confirmed) {
-                                void handleDelete(item.id);
+                          <PermissionGuard
+                            permissions={permissions}
+                            required="master.service.delete">
+                            <ConfirmDeleteDialog
+                              title="Hapus Master Service?"
+                              description={`Apakah Anda yakin ingin menghapus master service "${item.name}"? Tindakan ini tidak dapat dibatalkan.`}
+                              loadingLabel="Menghapus service..."
+                              onConfirm={() => handleDelete(item.id)}
+                              trigger={
+                                <DropdownMenuItem
+                                  onSelect={(event) => event.preventDefault()}
+                                  className="text-destructive focus:text-destructive">
+                                  <Trash2 className="mr-2 size-4" />
+                                  Hapus Service
+                                </DropdownMenuItem>
                               }
-                            }}
-                            className="text-destructive focus:text-destructive">
-                            <Trash2 className="mr-2 size-4" />
-                            Hapus Service
-                          </DropdownMenuItem>
+                            />
+                          </PermissionGuard>
                         </PermissionGuard>
                       </DropdownMenuContent>
                     </DropdownMenu>

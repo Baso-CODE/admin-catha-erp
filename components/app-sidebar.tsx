@@ -183,6 +183,13 @@ const data = {
           emoji: "🔄",
           permission: "recurring_billing.read",
         },
+
+        {
+          name: "Profitability",
+          url: "/internal/finance/profitability",
+          emoji: "📈",
+          permission: "profitability.read",
+        },
       ],
     },
   ],

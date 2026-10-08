@@ -45,24 +45,45 @@ export function RecurringBillingActions({
     }
   }
 
-  async function handleGenerate() {
-    if (!window.confirm("Generate invoice untuk siklus yang jatuh tempo?")) {
-      return;
-    }
+  const handleGenerate = () => {
+    if (loading) return;
 
-    try {
-      setLoading(true);
-      const response = await recurringBillingService.generateInvoice(id);
-      toast.success(`Invoice ${response.data.invoiceNo} berhasil dibuat.`);
-      router.refresh();
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Gagal membuat invoice.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }
+    toast.warning("Konfirmasi Generate Invoice", {
+      description: "Generate invoice untuk siklus billing yang jatuh tempo?",
+      duration: 10000,
+      action: {
+        label: "Ya, Generate",
+        onClick: async () => {
+          if (loading) return;
+
+          try {
+            setLoading(true);
+
+            const response = await recurringBillingService.generateInvoice(id);
+
+            toast.success(
+              `Invoice ${response.data.invoiceNo} berhasil dibuat.`,
+            );
+
+            router.refresh();
+          } catch (error) {
+            toast.error("Gagal membuat invoice.", {
+              description:
+                error instanceof Error
+                  ? error.message
+                  : "Terjadi kesalahan pada server.",
+            });
+          } finally {
+            setLoading(false);
+          }
+        },
+      },
+      cancel: {
+        label: "Batal",
+        onClick: () => toast.dismiss(),
+      },
+    });
+  };
 
   return (
     <div className="flex flex-wrap gap-2">
