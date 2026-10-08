@@ -86,7 +86,7 @@ const data = {
     },
     {
       title: "Finance",
-      url: "/internal/finance/invoices",
+      url: "/internal/finance",
       icon: <ReceiptTextIcon />,
       permission: "invoice.read",
     },
@@ -163,6 +163,18 @@ const data = {
           url: "/internal/finance/payments",
           emoji: "💰",
           permission: "payment.read",
+        },
+        {
+          name: "AR Aging Report",
+          url: "/internal/finance/aging",
+          emoji: "📊",
+          permission: "invoice.read",
+        },
+        {
+          name: "Finance Reports",
+          url: "/internal/finance/reports",
+          emoji: "📑",
+          permission: "invoice.read",
         },
       ],
     },
