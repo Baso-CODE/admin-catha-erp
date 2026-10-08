@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Eye, Loader2, RefreshCw, RotateCcw } from "lucide-react";
+import { ArrowLeft, Eye, Loader2, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -90,31 +90,42 @@ export default function RecurringBillingJobsClient({ permissions }: Props) {
     void loadData();
   }, [loadData]);
 
-  const handleRetry = async (item: RecurringBillingJob) => {
-    if (
-      !window.confirm(
-        `Coba ulang billing ${item.recurringBilling.contract.contractNo} untuk periode ${formatDate(item.billingPeriodStart)}?`,
-      )
-    ) {
-      return;
-    }
+  const handleRetry = (item: RecurringBillingJob) => {
+    if (processingId) return;
 
-    try {
-      setProcessingId(item.id);
+    toast.warning("Konfirmasi Retry Billing", {
+      description: `Coba ulang billing ${item.recurringBilling.contract.contractNo} untuk periode ${formatDate(item.billingPeriodStart)}?`,
+      duration: 10000,
+      action: {
+        label: "Ya, Retry",
+        onClick: async () => {
+          setProcessingId(item.id);
 
-      const result = await recurringBillingJobService.retry(item.id);
+          try {
+            const result = await recurringBillingJobService.retry(item.id);
 
-      toast.success(
-        result.message || "Job berhasil dimasukkan kembali ke antrean.",
-      );
-      setRefreshKey((prev) => prev + 1);
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Gagal melakukan retry.",
-      );
-    } finally {
-      setProcessingId(null);
-    }
+            toast.success(
+              result.message || "Job berhasil dimasukkan kembali ke antrean.",
+            );
+
+            setRefreshKey((prev) => prev + 1);
+          } catch (error) {
+            toast.error("Gagal melakukan retry billing.", {
+              description:
+                error instanceof Error
+                  ? error.message
+                  : "Terjadi kesalahan pada server.",
+            });
+          } finally {
+            setProcessingId(null);
+          }
+        },
+      },
+      cancel: {
+        label: "Batal",
+        onClick: () => toast.dismiss(),
+      },
+    });
   };
 
   const statistics = [
@@ -285,14 +296,14 @@ export default function RecurringBillingJobsClient({ permissions }: Props) {
                           </Button>
                           {canRetry && terminalFailed && (
                             <Button
-                              size="sm"
                               variant="outline"
+                              size="sm"
                               disabled={processingId !== null}
-                              onClick={() => void handleRetry(item)}>
+                              onClick={() => handleRetry(item)}>
                               {processingId === item.id ? (
                                 <Loader2 className="size-4 animate-spin" />
                               ) : (
-                                <RotateCcw className="size-4" />
+                                <RefreshCw className="size-4" />
                               )}
                               Retry
                             </Button>
