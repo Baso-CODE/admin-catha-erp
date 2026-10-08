@@ -176,6 +176,13 @@ const data = {
           emoji: "📑",
           permission: "invoice.read",
         },
+
+        {
+          name: "Recurring Billing",
+          url: "/internal/finance/recurring-billing",
+          emoji: "🔄",
+          permission: "recurring_billing.read",
+        },
       ],
     },
   ],
