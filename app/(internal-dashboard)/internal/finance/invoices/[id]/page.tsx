@@ -7,10 +7,10 @@ import {
   Landmark,
 } from "lucide-react";
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 
 import { requireInternalUser } from "@/app/lib/auth/require-internal-user";
-import { getInvoiceServer } from "@/app/lib/finance/get-invoice-server";
+import { serverInvoiceService } from "@/app/services/server/invoice.service";
 import { Button } from "@/components/ui/button";
 import { InvoiceStatusBadge } from "../components/invoice-status-badge";
 
@@ -49,11 +49,8 @@ export default async function InvoiceDetailPage({
 
   const { id } = await params;
 
-  const invoice = await getInvoiceServer(id);
-
-  if (!invoice) {
-    notFound();
-  }
+  const response = await serverInvoiceService.getById(id);
+  const invoice = response.data;
 
   return (
     <div className="space-y-6">

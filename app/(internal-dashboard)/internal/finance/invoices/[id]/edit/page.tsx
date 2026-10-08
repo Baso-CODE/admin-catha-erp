@@ -1,6 +1,6 @@
 import { requireInternalUser } from "@/app/lib/auth/require-internal-user";
-import { getInvoiceServer } from "@/app/lib/finance/get-invoice-server";
-import { notFound, redirect } from "next/navigation";
+import { serverInvoiceService } from "@/app/services/server/invoice.service";
+import { redirect } from "next/navigation";
 import { InvoiceForm } from "../../components/invoice-form";
 
 interface EditInvoicePageProps {
@@ -20,11 +20,8 @@ export default async function EditInvoicePage({
 
   const { id } = await params;
 
-  const invoice = await getInvoiceServer(id);
-
-  if (!invoice) {
-    notFound();
-  }
+  const response = await serverInvoiceService.getById(id);
+  const invoice = response.data;
 
   if (invoice.status !== "DRAFT") {
     redirect(`/internal/finance/invoices/${id}`);

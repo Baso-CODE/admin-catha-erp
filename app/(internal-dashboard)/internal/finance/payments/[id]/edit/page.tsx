@@ -1,6 +1,6 @@
 import { requireInternalUser } from "@/app/lib/auth/require-internal-user";
-import { getPaymentServer } from "@/app/lib/finance/get-payment-server";
-import { notFound, redirect } from "next/navigation";
+import { serverPaymentService } from "@/app/services/server/payment.service";
+import { redirect } from "next/navigation";
 import { PaymentForm } from "../../components/payment-form";
 
 interface EditPaymentPageProps {
@@ -20,11 +20,8 @@ export default async function EditPaymentPage({
 
   const { id } = await params;
 
-  const payment = await getPaymentServer(id);
-
-  if (!payment) {
-    notFound();
-  }
+  const response = await serverPaymentService.getById(id);
+  const payment = response.data;
 
   if (payment.status !== "PENDING") {
     redirect(`/internal/finance/payments/${id}`);

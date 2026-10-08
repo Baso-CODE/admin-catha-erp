@@ -7,10 +7,10 @@ import {
   UserCheck,
 } from "lucide-react";
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 
 import { requireInternalUser } from "@/app/lib/auth/require-internal-user";
-import { getPaymentServer } from "@/app/lib/finance/get-payment-server";
+import { serverPaymentService } from "@/app/services/server/payment.service";
 import { Button } from "@/components/ui/button";
 import { PaymentStatusBadge } from "../components/payment-status-badge";
 import { PaymentActions } from "./payment-actions";
@@ -57,11 +57,8 @@ export default async function PaymentDetailPage({
 
   const { id } = await params;
 
-  const payment = await getPaymentServer(id);
-
-  if (!payment) {
-    notFound();
-  }
+  const response = await serverPaymentService.getById(id);
+  const payment = response.data;
 
   return (
     <div className="space-y-6">

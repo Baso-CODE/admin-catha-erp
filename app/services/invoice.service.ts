@@ -1,5 +1,4 @@
 import { apiClient } from "@/lib/api";
-
 export type InvoiceStatus =
   | "DRAFT"
   | "SENT"
