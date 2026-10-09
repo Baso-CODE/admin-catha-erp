@@ -5,7 +5,6 @@ import { redirect } from "next/navigation";
 
 export default async function ReportsPage() {
   const user = await requireInternalUser();
-
   const permissions = new Set(user.permissions);
 
   const reports = [
@@ -31,11 +30,11 @@ export default async function ReportsPage() {
     {
       title: "Team Workload Report",
       description:
-        "Analisis beban kerja anggota tim, distribusi Task, dan produktivitas.",
+        "Analisis beban kerja anggota tim, Task aktif, penyelesaian, overdue, blocked, dan prioritas pekerjaan.",
       href: "/internal/reports/team-workload",
       icon: Users,
-      available: false,
-      enabled: false,
+      available: permissions.has("task.read"),
+      enabled: true,
     },
     {
       title: "Client KPI Report",

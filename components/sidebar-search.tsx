@@ -138,6 +138,13 @@ export function SidebarSearch({
       icon: <BarChart3 className="mr-2 size-4 text-primary" />,
       accessMode: "reporting",
     },
+
+    {
+      title: "Team Workload Report",
+      url: "/internal/reports/team-workload",
+      icon: <Users className="mr-2 size-4 text-primary" />,
+      permission: "task.read",
+    },
   ];
 
   const adminItems: SearchMenuItem[] = [

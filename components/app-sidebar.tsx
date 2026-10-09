@@ -212,6 +212,13 @@ const data = {
           emoji: "📊",
           permission: "project.read",
         },
+
+        {
+          name: "Team Workload Report",
+          url: "/internal/reports/team-workload",
+          emoji: "👥",
+          permission: "task.read",
+        },
       ],
     },
   ],
@@ -240,6 +247,7 @@ export function AppSidebar({ permissions, ...props }: AppSidebarProps) {
     if (item.accessMode === "reporting") {
       return (
         permissions.includes("project.read") ||
+        permissions.includes("task.read") ||
         (permissions.includes("invoice.read") &&
           permissions.includes("payment.read"))
       );
