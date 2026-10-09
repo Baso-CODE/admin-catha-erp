@@ -178,6 +178,14 @@ const data = {
         },
 
         {
+          name: "Revenue Report",
+          url: "/internal/finance/reports/revenue",
+          emoji: "📊",
+          permission: "invoice.read",
+          requiredPermissions: ["invoice.read", "payment.read"],
+        },
+
+        {
           name: "Recurring Billing",
           url: "/internal/finance/recurring-billing",
           emoji: "🔄",
@@ -210,6 +218,19 @@ export function AppSidebar({ permissions, ...props }: AppSidebarProps) {
     return permissions.includes(permission);
   };
 
+  const canAccessMenu = (item: {
+    permission?: string | null;
+    requiredPermissions?: string[];
+  }) => {
+    if (item.requiredPermissions?.length) {
+      return item.requiredPermissions.every((permission) =>
+        permissions.includes(permission),
+      );
+    }
+
+    return hasPermission(item.permission);
+  };
+
   const navMain = data.navMain
     .filter((item) => hasPermission(item.permission))
     .map((item) => ({
@@ -230,10 +251,9 @@ export function AppSidebar({ permissions, ...props }: AppSidebarProps) {
   const workspaces = data.workspaces
     .map((workspace) => ({
       ...workspace,
-      pages: workspace.pages.filter((page) => hasPermission(page.permission)),
+      pages: workspace.pages.filter((page) => canAccessMenu(page)),
     }))
     .filter((workspace) => workspace.pages.length > 0);
-
   const handleLogout = async () => {
     try {
       await authService.logout();

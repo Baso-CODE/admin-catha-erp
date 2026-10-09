@@ -35,6 +35,7 @@ interface SearchMenuItem {
   url: string;
   icon: React.ReactNode;
   permission?: string | null;
+  requiredPermissions?: string[];
 }
 
 export function SidebarSearch({
@@ -51,6 +52,18 @@ export function SidebarSearch({
       return permissions.includes(permission);
     },
     [permissions],
+  );
+  const canAccessMenu = React.useCallback(
+    (item: SearchMenuItem) => {
+      if (item.requiredPermissions?.length) {
+        return item.requiredPermissions.every((permission) =>
+          permissions.includes(permission),
+        );
+      }
+
+      return hasPermission(item.permission);
+    },
+    [permissions, hasPermission],
   );
 
   const mainItems: SearchMenuItem[] = [
@@ -94,7 +107,13 @@ export function SidebarSearch({
       title: "Finance & Invoices",
       url: "/internal/finance",
       icon: <ReceiptText className="mr-2 size-4 text-primary" />,
-      permission: "finance.invoice.read",
+      permission: "invoice.read",
+    },
+    {
+      title: "Revenue Report",
+      url: "/internal/finance/reports/revenue",
+      icon: <ReceiptText className="mr-2 size-4 text-primary" />,
+      requiredPermissions: ["invoice.read", "payment.read"],
     },
   ];
 
@@ -113,14 +132,8 @@ export function SidebarSearch({
     },
   ];
 
-  const visibleMainItems = mainItems.filter((item) =>
-    hasPermission(item.permission),
-  );
-
-  const visibleAdminItems = adminItems.filter((item) =>
-    hasPermission(item.permission),
-  );
-
+  const visibleMainItems = mainItems.filter(canAccessMenu);
+  const visibleAdminItems = adminItems.filter(canAccessMenu);
   React.useEffect(() => {
     const down = (event: KeyboardEvent) => {
       if (event.key === "k" && (event.metaKey || event.ctrlKey)) {
