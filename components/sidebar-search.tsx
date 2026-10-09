@@ -11,6 +11,7 @@ import {
   CommandSeparator,
 } from "@/components/ui/command";
 import {
+  BarChart3,
   Briefcase,
   Building2,
   ClipboardList,
@@ -36,8 +37,8 @@ interface SearchMenuItem {
   icon: React.ReactNode;
   permission?: string | null;
   requiredPermissions?: string[];
+  accessMode?: "reporting";
 }
-
 export function SidebarSearch({
   open,
   onOpenChange,
@@ -53,8 +54,17 @@ export function SidebarSearch({
     },
     [permissions],
   );
+
   const canAccessMenu = React.useCallback(
     (item: SearchMenuItem) => {
+      if (item.accessMode === "reporting") {
+        return (
+          permissions.includes("project.read") ||
+          (permissions.includes("invoice.read") &&
+            permissions.includes("payment.read"))
+        );
+      }
+
       if (item.requiredPermissions?.length) {
         return item.requiredPermissions.every((permission) =>
           permissions.includes(permission),
@@ -65,7 +75,6 @@ export function SidebarSearch({
     },
     [permissions, hasPermission],
   );
-
   const mainItems: SearchMenuItem[] = [
     {
       title: "Overview / Dashboard",
@@ -111,9 +120,23 @@ export function SidebarSearch({
     },
     {
       title: "Revenue Report",
-      url: "/internal/finance/reports/revenue",
+      url: "/internal/reports/revenue",
       icon: <ReceiptText className="mr-2 size-4 text-primary" />,
       requiredPermissions: ["invoice.read", "payment.read"],
+    },
+
+    {
+      title: "Project Report",
+      url: "/internal/reports/projects",
+      icon: <FolderKanban className="mr-2 size-4 text-primary" />,
+      permission: "project.read",
+    },
+
+    {
+      title: "Reporting & Analytics",
+      url: "/internal/reports",
+      icon: <BarChart3 className="mr-2 size-4 text-primary" />,
+      accessMode: "reporting",
     },
   ];
 

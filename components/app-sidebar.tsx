@@ -179,7 +179,7 @@ const data = {
 
         {
           name: "Revenue Report",
-          url: "/internal/finance/reports/revenue",
+          url: "/internal/reports/revenue",
           emoji: "📊",
           permission: "invoice.read",
           requiredPermissions: ["invoice.read", "payment.read"],
@@ -197,6 +197,20 @@ const data = {
           url: "/internal/finance/profitability",
           emoji: "📈",
           permission: "profitability.read",
+        },
+        {
+          name: "Reporting & Analytics",
+          url: "/internal/reports",
+          emoji: "📊",
+          permission: null,
+          accessMode: "reporting" as const,
+        },
+
+        {
+          name: "Project Report",
+          url: "/internal/reports/projects",
+          emoji: "📊",
+          permission: "project.read",
         },
       ],
     },
@@ -221,7 +235,16 @@ export function AppSidebar({ permissions, ...props }: AppSidebarProps) {
   const canAccessMenu = (item: {
     permission?: string | null;
     requiredPermissions?: string[];
+    accessMode?: "reporting";
   }) => {
+    if (item.accessMode === "reporting") {
+      return (
+        permissions.includes("project.read") ||
+        (permissions.includes("invoice.read") &&
+          permissions.includes("payment.read"))
+      );
+    }
+
     if (item.requiredPermissions?.length) {
       return item.requiredPermissions.every((permission) =>
         permissions.includes(permission),
@@ -230,7 +253,6 @@ export function AppSidebar({ permissions, ...props }: AppSidebarProps) {
 
     return hasPermission(item.permission);
   };
-
   const navMain = data.navMain
     .filter((item) => hasPermission(item.permission))
     .map((item) => ({
@@ -254,6 +276,7 @@ export function AppSidebar({ permissions, ...props }: AppSidebarProps) {
       pages: workspace.pages.filter((page) => canAccessMenu(page)),
     }))
     .filter((workspace) => workspace.pages.length > 0);
+
   const handleLogout = async () => {
     try {
       await authService.logout();
