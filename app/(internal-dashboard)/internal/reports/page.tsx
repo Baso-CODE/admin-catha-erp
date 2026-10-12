@@ -39,11 +39,11 @@ export default async function ReportsPage() {
     {
       title: "Client KPI Report",
       description:
-        "Analisis performa Client, retention, dan kontribusi terhadap bisnis.",
+        "Analisis status Client, repeat business, kontribusi Project, pendapatan, pembayaran, dan outstanding.",
       href: "/internal/reports/clients",
       icon: BarChart3,
-      available: false,
-      enabled: false,
+      available: permissions.has("client.read"),
+      enabled: true,
     },
   ];
 

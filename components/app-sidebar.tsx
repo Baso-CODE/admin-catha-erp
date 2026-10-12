@@ -219,6 +219,13 @@ const data = {
           emoji: "👥",
           permission: "task.read",
         },
+
+        {
+          name: "Client KPI Report",
+          url: "/internal/reports/clients",
+          emoji: "📈",
+          permission: "client.read",
+        },
       ],
     },
   ],
@@ -246,6 +253,7 @@ export function AppSidebar({ permissions, ...props }: AppSidebarProps) {
   }) => {
     if (item.accessMode === "reporting") {
       return (
+        permissions.includes("client.read") ||
         permissions.includes("project.read") ||
         permissions.includes("task.read") ||
         (permissions.includes("invoice.read") &&
