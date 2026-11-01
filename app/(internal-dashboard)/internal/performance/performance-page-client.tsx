@@ -2,6 +2,10 @@
 
 import { ClientItem, clientService } from "@/app/services/client.service";
 import { performanceService } from "@/app/services/performance.service";
+import {
+  ProjectServiceItem,
+  projectServiceLookup,
+} from "@/app/services/project-service.service";
 import { ProjectItem, projectService } from "@/app/services/project.service";
 import {
   PerformanceAccount,
@@ -99,6 +103,11 @@ export default function PerformancePageClient({
   const [logs, setLogs] = useState<SyncJob[]>([]);
   const [clients, setClients] = useState<ClientItem[]>([]);
   const [projects, setProjects] = useState<ProjectItem[]>([]);
+
+  const [projectServices, setProjectServices] = useState<ProjectServiceItem[]>(
+    [],
+  );
+  const [projectServiceLoading, setProjectServiceLoading] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -212,6 +221,44 @@ export default function PerformancePageClient({
   }, [connection?.id, connection?.platform, canReadMap, canLogs]);
 
   useEffect(() => {
+    let cancelled = false;
+
+    if (!projectId || !canMap) {
+      return;
+    }
+
+    const load = async () => {
+      setProjectServiceLoading(true);
+
+      try {
+        const data = await projectServiceLookup.getAllForProject(projectId);
+
+        if (!cancelled) {
+          setProjectServices(data);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : "Gagal memuat Project Service.",
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setProjectServiceLoading(false);
+        }
+      }
+    };
+
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId, canMap]);
+
+  useEffect(() => {
     void loadConnections();
   }, [loadConnections]);
 
@@ -231,7 +278,13 @@ export default function PerformancePageClient({
   useEffect(() => {
     setProjectId("");
     setProjectServiceId("");
+    setProjectServices([]);
   }, [clientId]);
+
+  useEffect(() => {
+    setProjectServiceId("");
+    setProjectServices([]);
+  }, [projectId]);
 
   async function run(
     key: string,
@@ -677,16 +730,37 @@ export default function PerformancePageClient({
 
                       <label className="space-y-1">
                         <span className="text-xs font-medium">
-                          Project Service UUID (Opsional)
+                          Project Service (Opsional)
                         </span>
-                        <input
+                        <select
                           className={inputClass}
                           value={projectServiceId}
+                          disabled={
+                            !projectId || projectServiceLoading || !!busy
+                          }
                           onChange={(event) =>
                             setProjectServiceId(event.target.value)
-                          }
-                          placeholder="Kosongkan jika tidak diperlukan"
-                        />
+                          }>
+                          <option value="">
+                            {projectServiceLoading
+                              ? "Memuat Project Service..."
+                              : "Tanpa Project Service"}
+                          </option>
+                          {projectServices.map((item) => (
+                            <option key={item.id} value={item.id}>
+                              {item.masterService?.name ||
+                                item.masterService?.code ||
+                                item.id}
+                            </option>
+                          ))}
+                        </select>
+                        {projectId &&
+                          !projectServiceLoading &&
+                          projectServices.length === 0 && (
+                            <span className="block text-xs text-muted-foreground">
+                              Belum ada layanan pada Project ini.
+                            </span>
+                          )}
                       </label>
 
                       <div className="sm:col-span-2">
