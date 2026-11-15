@@ -70,7 +70,6 @@ const INITIAL_FORM: DeliverablePayload = {
   name: "",
   version: "1.0",
   description: "",
-  fileUrl: "",
 };
 
 function getErrorMessage(error: unknown): string {
@@ -94,6 +93,42 @@ export default function DeliverablesClient({ permissions }: Props) {
   const [editing, setEditing] = useState<DeliverableItem | null>(null);
   const [form, setForm] = useState<DeliverablePayload>(INITIAL_FORM);
   const [saving, setSaving] = useState(false);
+
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
+
+  async function uploadDeliverableFile(item: DeliverableItem, file: File) {
+    if (!canUpdate || uploadingId) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Maksimal ukuran file adalah 10 MB.");
+      return;
+    }
+
+    setUploadingId(item.id);
+
+    try {
+      await deliverableService.uploadFile(item.id, file);
+
+      toast.success("File deliverable berhasil diupload.");
+      await loadDeliverables();
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setUploadingId(null);
+    }
+  }
+
+  async function downloadDeliverableFile(id: string) {
+    try {
+      const response = await deliverableService.getDownloadUrl(id);
+
+      // Navigasi browser ke signed URL sementara.
+      // Tidak menyimpan URL di localStorage atau database frontend.
+      window.location.assign(response.data.url);
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    }
+  }
 
   useEffect(() => {
     let active = true;
@@ -165,7 +200,6 @@ export default function DeliverablesClient({ permissions }: Props) {
       name: item.name,
       version: item.version,
       description: item.description ?? "",
-      fileUrl: item.fileUrl ?? "",
     });
     setDialogOpen(true);
   }
@@ -188,7 +222,6 @@ export default function DeliverablesClient({ permissions }: Props) {
         name: form.name.trim(),
         version: form.version?.trim() || "1.0",
         description: form.description?.trim() || null,
-        fileUrl: form.fileUrl?.trim() || null,
       };
 
       if (editing) {
@@ -268,14 +301,33 @@ export default function DeliverablesClient({ permissions }: Props) {
             <Button
               size="sm"
               variant="outline"
-              disabled={busy}
+              disabled={busy || uploadingId !== null}
               onClick={() => openEdit(item)}>
               Edit
             </Button>
 
+            <div className="flex items-center">
+              <Input
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png,.webp,.docx,.xlsx"
+                className="h-9 w-52 cursor-pointer text-xs"
+                disabled={busy || uploadingId !== null}
+                aria-label={`Upload file untuk ${item.name}`}
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+
+                  if (file) {
+                    void uploadDeliverableFile(item, file);
+                  }
+
+                  event.target.value = "";
+                }}
+              />
+            </div>
+
             <Button
               size="sm"
-              disabled={busy}
+              disabled={busy || uploadingId !== null}
               onClick={() => void runAction(item, "review")}>
               Start Review
             </Button>
@@ -477,12 +529,17 @@ export default function DeliverablesClient({ permissions }: Props) {
                         </TableCell>
 
                         <TableCell>
-                          {item.fileUrl ? (
-                            <span className="text-sm text-muted-foreground">
-                              Tersedia
-                            </span>
+                          {item.hasFile ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() =>
+                                void downloadDeliverableFile(item.id)
+                              }>
+                              Unduh File
+                            </Button>
                           ) : (
-                            "—"
+                            <Badge variant="secondary">Belum Upload</Badge>
                           )}
                         </TableCell>
 

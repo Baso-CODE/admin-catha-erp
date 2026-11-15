@@ -76,6 +76,7 @@ export interface ClientApprovalItem {
     dueDate: string | null;
     submittedAt: string | null;
     approvedAt: string | null;
+    hasFile: boolean;
     project: {
       id: string;
       projectCode: string;
@@ -144,6 +145,7 @@ export interface ClientProjectDetail {
     approvedAt: string | null;
     createdAt: string;
     updatedAt: string;
+    hasFile: boolean;
   }>;
   _count: {
     services: number;
@@ -272,26 +274,30 @@ export interface ChangePasswordPayload {
 export interface ClientDocumentItem {
   id: string;
   fileName: string;
-  fileUrl: string;
   fileType: string;
   fileSize: number;
   createdAt: string;
+
   source: "PROJECT" | "DELIVERABLE" | "CONTRACT" | "OTHER";
+
   project: {
     id: string;
     projectCode: string;
     name: string;
   } | null;
+
   deliverable: {
     id: string;
     name: string;
     version: string;
+    status: string;
     project: {
       id: string;
       projectCode: string;
       name: string;
     };
   } | null;
+
   contract: {
     id: string;
     contractNo: string;
@@ -541,6 +547,31 @@ export const clientPortalService = {
     }>("/auth/change-password", {
       method: "PATCH",
       body: payload,
+    });
+  },
+
+  getDeliverableDownloadUrl(deliverableId: string) {
+    return apiClient<{
+      success: boolean;
+      data: {
+        url: string;
+        fileName: string;
+        expiresInSeconds: number;
+      };
+    }>(`/client/deliverables/${encodeURIComponent(deliverableId)}/file`);
+  },
+
+  getDocumentDownloadUrl(documentId: string) {
+    return apiClient<{
+      success: boolean;
+      data: {
+        id: string;
+        fileName: string;
+        url: string;
+        expiresInSeconds: number;
+      };
+    }>(`/client/documents/${encodeURIComponent(documentId)}/download`, {
+      method: "GET",
     });
   },
 };

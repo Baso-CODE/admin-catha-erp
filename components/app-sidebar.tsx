@@ -100,10 +100,10 @@ const data = {
       permission: "admin.role.read",
     },
     {
-      title: "Help & Support",
+      title: "Support Tickets",
       url: "/internal/support",
       icon: <HelpCircleIcon />,
-      permission: null,
+      permission: "client.read",
     },
   ],
 
