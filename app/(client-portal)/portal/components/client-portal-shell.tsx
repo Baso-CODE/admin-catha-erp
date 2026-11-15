@@ -1,6 +1,8 @@
 "use client";
 
 import {
+  BarChart3,
+  Bell,
   CheckCircle2,
   FileText,
   FolderKanban,
@@ -8,6 +10,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  Receipt,
   Ticket,
   UserRound,
 } from "lucide-react";
@@ -43,6 +46,16 @@ const navigation = [
     icon: LayoutDashboard,
   },
   {
+    title: "Performance",
+    url: "/portal/performance",
+    icon: BarChart3,
+  },
+  {
+    title: "Notifications",
+    url: "/portal/notifications",
+    icon: Bell,
+  },
+  {
     title: "My Projects",
     url: "/portal/projects",
     icon: FolderKanban,
@@ -66,6 +79,11 @@ const navigation = [
     title: "Profile",
     url: "/portal/profile",
     icon: UserRound,
+  },
+  {
+    title: "Invoice & Payment",
+    url: "/portal/invoices",
+    icon: Receipt,
   },
   {
     title: "Support",
