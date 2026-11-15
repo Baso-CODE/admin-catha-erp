@@ -3,17 +3,19 @@
 import {
   ChevronLeft,
   ChevronRight,
-  ExternalLink,
+  Download,
   FileText,
+  Loader2,
   Search,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import {
-  ClientDocumentItem,
   clientPortalService,
+  type ClientDocumentItem,
 } from "@/app/services/client-portal.service";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,6 +43,7 @@ export function ClientDocumentsPage() {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -65,12 +68,9 @@ export function ClientDocumentsPage() {
       setTotal(response.meta.total);
       setTotalPages(response.meta.totalPages);
     } catch (error) {
-      toast.error("Gagal mengambil document.", {
-        description:
-          error instanceof Error
-            ? error.message
-            : "Terjadi kesalahan pada server.",
-      });
+      toast.error(
+        error instanceof Error ? error.message : "Gagal mengambil dokumen.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -80,20 +80,50 @@ export function ClientDocumentsPage() {
     void loadDocuments();
   }, [loadDocuments]);
 
+  async function downloadDocument(documentId: string) {
+    if (downloadingId) return;
+
+    setDownloadingId(documentId);
+
+    try {
+      const response =
+        await clientPortalService.getDocumentDownloadUrl(documentId);
+
+      // URL hanya dibuat setelah backend memeriksa akses.
+      // Signed URL tidak disimpan di state atau localStorage.
+      window.location.assign(response.data.url);
+    } catch (error) {
+      toast.error("Gagal mengunduh dokumen.", {
+        description:
+          error instanceof Error
+            ? error.message
+            : "Terjadi kesalahan pada server.",
+      });
+    } finally {
+      setDownloadingId(null);
+    }
+  }
+
   return (
     <div className="space-y-6 p-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Documents</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          Documents Center
+        </h1>
 
         <p className="text-sm text-muted-foreground">
-          File dan dokumen yang dibagikan kepada perusahaan Anda.
+          Akses dokumen project, deliverable, dan contract yang telah dibagikan
+          kepada perusahaan Anda.
         </p>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle>Client Documents</CardTitle>
-          <CardDescription>Total {total} document.</CardDescription>
+
+          <CardDescription>
+            Total {total} dokumen yang dapat diakses.
+          </CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-4">
@@ -103,12 +133,12 @@ export function ClientDocumentsPage() {
             <Input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Cari nama file..."
+              placeholder="Cari nama dokumen..."
               className="pl-9"
             />
           </div>
 
-          <div className="rounded-lg border">
+          <div className="overflow-x-auto rounded-lg border">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -117,7 +147,7 @@ export function ClientDocumentsPage() {
                   <TableHead>Reference</TableHead>
                   <TableHead>Size</TableHead>
                   <TableHead>Uploaded</TableHead>
-                  <TableHead className="w-16 text-right">Action</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
 
@@ -127,7 +157,8 @@ export function ClientDocumentsPage() {
                     <TableCell
                       colSpan={6}
                       className="h-28 text-center text-muted-foreground">
-                      Memuat document...
+                      <Loader2 className="mx-auto size-5 animate-spin" />
+                      <p className="mt-2">Memuat dokumen...</p>
                     </TableCell>
                   </TableRow>
                 ) : items.length === 0 ? (
@@ -135,7 +166,7 @@ export function ClientDocumentsPage() {
                     <TableCell
                       colSpan={6}
                       className="h-28 text-center text-muted-foreground">
-                      Belum ada document yang dibagikan.
+                      Belum ada dokumen yang tersedia.
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -148,7 +179,7 @@ export function ClientDocumentsPage() {
                           </div>
 
                           <div className="min-w-0">
-                            <div className="max-w-[320px] truncate font-medium">
+                            <div className="max-w-64 truncate font-medium">
                               {item.fileName}
                             </div>
 
@@ -161,7 +192,7 @@ export function ClientDocumentsPage() {
 
                       <TableCell>
                         <Badge variant="outline">
-                          {formatStatus(item.source)}
+                          {formatSource(item.source)}
                         </Badge>
                       </TableCell>
 
@@ -172,13 +203,17 @@ export function ClientDocumentsPage() {
                       <TableCell>{formatDate(item.createdAt)}</TableCell>
 
                       <TableCell className="text-right">
-                        <Button size="icon" variant="ghost" asChild>
-                          <a
-                            href={item.fileUrl}
-                            target="_blank"
-                            rel="noreferrer">
-                            <ExternalLink className="size-4" />
-                          </a>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={downloadingId !== null}
+                          onClick={() => void downloadDocument(item.id)}>
+                          {downloadingId === item.id ? (
+                            <Loader2 className="size-4 animate-spin" />
+                          ) : (
+                            <Download className="size-4" />
+                          )}
+                          Unduh
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -188,7 +223,7 @@ export function ClientDocumentsPage() {
             </Table>
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-3">
             <p className="text-sm text-muted-foreground">
               Halaman {totalPages === 0 ? 0 : page} dari {totalPages}
             </p>
@@ -220,24 +255,15 @@ export function ClientDocumentsPage() {
 }
 
 function getReference(item: ClientDocumentItem) {
-  if (item.project) {
-    return (
-      <div>
-        <div>{item.project.name}</div>
-        <div className="text-xs text-muted-foreground">
-          {item.project.projectCode}
-        </div>
-      </div>
-    );
-  }
-
+  // Deliverable didahulukan karena memiliki projectId.
   if (item.deliverable) {
     return (
       <div>
-        <div>{item.deliverable.name}</div>
-        <div className="text-xs text-muted-foreground">
-          {item.deliverable.project.projectCode} · v{item.deliverable.version}
-        </div>
+        <p>{item.deliverable.name}</p>
+        <p className="text-xs text-muted-foreground">
+          {item.deliverable.project.projectCode}
+          {" · "}v{item.deliverable.version}
+        </p>
       </div>
     );
   }
@@ -245,21 +271,33 @@ function getReference(item: ClientDocumentItem) {
   if (item.contract) {
     return (
       <div>
-        <div>{item.contract.title}</div>
-        <div className="text-xs text-muted-foreground">
+        <p>{item.contract.title}</p>
+        <p className="text-xs text-muted-foreground">
           {item.contract.contractNo}
-        </div>
+        </p>
       </div>
     );
   }
 
-  return "-";
+  if (item.project) {
+    return (
+      <div>
+        <p>{item.project.name}</p>
+        <p className="text-xs text-muted-foreground">
+          {item.project.projectCode}
+        </p>
+      </div>
+    );
+  }
+
+  return "—";
 }
 
 function formatFileSize(bytes: number) {
   if (bytes <= 0) return "0 B";
 
   const units = ["B", "KB", "MB", "GB"];
+
   const index = Math.min(
     Math.floor(Math.log(bytes) / Math.log(1024)),
     units.length - 1,
@@ -270,11 +308,11 @@ function formatFileSize(bytes: number) {
   )} ${units[index]}`;
 }
 
-function formatStatus(value: string) {
+function formatSource(value: string) {
   return value
     .toLowerCase()
     .split("_")
-    .map((item) => item.charAt(0).toUpperCase() + item.slice(1))
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
 }
 

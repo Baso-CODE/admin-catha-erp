@@ -32,6 +32,7 @@ export interface DeliverableItem {
   createdAt: string;
   updatedAt: string;
   approvalRequests: DeliverableApproval[];
+  hasFile: boolean;
 }
 
 export interface DeliverablePayload {
@@ -111,5 +112,36 @@ export const deliverableService = {
     }>(`/deliverables/${encodeURIComponent(id)}/submit`, {
       method: "POST",
     });
+  },
+
+  uploadFile(id: string, file: File) {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    return apiClient<{
+      success: boolean;
+      message: string;
+      data: {
+        id: string;
+        fileName: string;
+        fileType: string;
+        fileSize: number;
+        createdAt: string;
+      };
+    }>(`/deliverables/${encodeURIComponent(id)}/file`, {
+      method: "POST",
+      body: formData,
+    });
+  },
+
+  getDownloadUrl(id: string) {
+    return apiClient<{
+      success: boolean;
+      data: {
+        url: string;
+        fileName: string;
+        expiresInSeconds: number;
+      };
+    }>(`/deliverables/${encodeURIComponent(id)}/file`);
   },
 };

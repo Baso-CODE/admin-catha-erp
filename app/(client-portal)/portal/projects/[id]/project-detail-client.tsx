@@ -36,6 +36,19 @@ export function ClientProjectDetailPage({
   const [project, setProject] = useState<ClientProjectDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  async function openDeliverableFile(id: string) {
+    try {
+      const response = await clientPortalService.getDeliverableDownloadUrl(id);
+
+      window.location.assign(response.data.url);
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Gagal mengakses file deliverable.",
+      );
+    }
+  }
   const loadProject = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -253,15 +266,12 @@ export function ClientProjectDetailPage({
                     </div>
                   </div>
 
-                  {deliverable.fileUrl && (
-                    <Button variant="outline" asChild>
-                      <a
-                        href={deliverable.fileUrl}
-                        target="_blank"
-                        rel="noreferrer">
-                        <FileText className="mr-2 size-4" />
-                        Lihat File
-                      </a>
+                  {deliverable.hasFile && (
+                    <Button
+                      variant="outline"
+                      onClick={() => void openDeliverableFile(deliverable.id)}>
+                      <FileText className="mr-2 size-4" />
+                      Unduh File
                     </Button>
                   )}
                 </div>
