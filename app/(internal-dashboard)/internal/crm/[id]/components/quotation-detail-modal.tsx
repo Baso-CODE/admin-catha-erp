@@ -1,7 +1,5 @@
 "use client";
 
-import { Eye } from "lucide-react";
-
 import { QuotationItem } from "@/app/services/crm/quotation.service";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,6 +11,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Eye } from "lucide-react";
+import { QuotationServiceSummary } from "./quotation-service-summary";
 
 interface QuotationDetailModalProps {
   quotation: QuotationItem;
@@ -94,7 +94,7 @@ export function QuotationDetailModal({ quotation }: QuotationDetailModalProps) {
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Detail Quotation</DialogTitle>
 
@@ -135,6 +135,20 @@ export function QuotationDetailModal({ quotation }: QuotationDetailModalProps) {
               <p className="text-lg font-semibold">
                 {formatCurrency(quotation.amount)}
               </p>
+            </div>
+
+            <div className="space-y-3 border-t pt-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold">
+                  Layanan yang Ditawarkan
+                </h3>
+
+                <Badge variant="outline">
+                  {quotation.serviceItems?.length ?? 0} Services
+                </Badge>
+              </div>
+
+              <QuotationServiceSummary items={quotation.serviceItems ?? []} />
             </div>
           </div>
         </div>

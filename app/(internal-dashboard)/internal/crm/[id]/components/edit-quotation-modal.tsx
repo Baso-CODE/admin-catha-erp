@@ -1,11 +1,5 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Pencil } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useForm, useWatch } from "react-hook-form";
-import { toast } from "sonner";
-
 import {
   QuotationItem,
   UpdateQuotationPayload,
@@ -30,11 +24,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2, Pencil } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
+import { toast } from "sonner";
 
 import {
   UpdateQuotationFormValues,
   updateQuotationSchema,
 } from "./quotation-form-schema";
+import { QuotationServicePicker } from "./quotation-service-picker";
+import { QuotationServiceSummary } from "./quotation-service-summary";
 
 interface EditQuotationModalProps {
   quotation: QuotationItem;
@@ -54,7 +55,12 @@ export function EditQuotationModal({
 }: EditQuotationModalProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
 
+  const [servicesReady, setServicesReady] = useState(false);
+
+  const canEditContent =
+    quotation.status === "DRAFT" && (quotation._count?.contracts ?? 0) === 0;
   const {
     register,
     handleSubmit,
@@ -74,16 +80,32 @@ export function EditQuotationModal({
 
   useEffect(() => {
     if (!open) return;
+
     reset(getDefaultValues(quotation));
+
+    setSelectedServiceIds(
+      quotation.serviceItems?.map((item) => item.masterServiceId) ?? [],
+    );
+
+    setServicesReady(false);
   }, [open, quotation, reset]);
 
   const onSubmit = async (values: UpdateQuotationFormValues) => {
+    if (canEditContent && !servicesReady) {
+      toast.error("Katalog layanan belum berhasil dimuat.");
+      return;
+    }
+
     try {
       setLoading(true);
 
       const payload: UpdateQuotationPayload = {
-        amount: values.amount,
         status: values.status,
+
+        ...(canEditContent && {
+          amount: values.amount,
+          masterServiceIds: selectedServiceIds,
+        }),
       };
 
       const response = await quotationService.update(quotation.id, payload);
@@ -116,7 +138,7 @@ export function EditQuotationModal({
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Edit Quotation</DialogTitle>
 
@@ -144,15 +166,36 @@ export function EditQuotationModal({
             </div>
           </div>
 
+          {canEditContent ? (
+            <QuotationServicePicker
+              open={open}
+              quotationId={quotation.id}
+              existingItems={quotation.serviceItems}
+              value={selectedServiceIds}
+              onChange={setSelectedServiceIds}
+              onReady={setServicesReady}
+              disabled={loading}
+            />
+          ) : (
+            <div className="space-y-3">
+              <Label>Layanan yang Ditawarkan</Label>
+
+              <QuotationServiceSummary items={quotation.serviceItems ?? []} />
+
+              <p className="rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground">
+                Nominal dan layanan tidak dapat diubah setelah quotation
+                diproses atau terhubung dengan contract.
+              </p>
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor={`quotation-amount-${quotation.id}`}>Amount</Label>
-
             <Input
               id={`quotation-amount-${quotation.id}`}
               type="number"
               min={0}
-              step={1000}
-              disabled={loading}
+              step={0.01}
+              readOnly={!canEditContent || loading}
               {...register("amount", {
                 setValueAs: (value) => (value === "" ? 0 : Number(value)),
               })}
@@ -186,7 +229,9 @@ export function EditQuotationModal({
               </SelectTrigger>
 
               <SelectContent>
-                <SelectItem value="DRAFT">Draft</SelectItem>
+                {quotation.status === "DRAFT" && (
+                  <SelectItem value="DRAFT">Draft</SelectItem>
+                )}
                 <SelectItem value="SENT">Sent</SelectItem>
                 <SelectItem value="APPROVED">Approved</SelectItem>
                 <SelectItem value="REJECTED">Rejected</SelectItem>
@@ -211,7 +256,9 @@ export function EditQuotationModal({
               Batal
             </Button>
 
-            <Button type="submit" disabled={loading}>
+            <Button
+              type="submit"
+              disabled={loading || (canEditContent && !servicesReady)}>
               {loading && <Loader2 className="mr-2 size-4 animate-spin" />}
               Simpan Perubahan
             </Button>

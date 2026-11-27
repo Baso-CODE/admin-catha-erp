@@ -207,6 +207,13 @@ export interface ClientSupportTicketDetail {
   }>;
 }
 
+export interface ClientServiceCategory {
+  id: string;
+  code: string;
+  name: string;
+  sortOrder: number;
+}
+
 export interface ClientServiceItem {
   id: string;
   status: string;
@@ -214,18 +221,23 @@ export interface ClientServiceItem {
   endDate: string | null;
   createdAt: string;
   updatedAt: string;
+
   masterService: {
     id: string;
     code: string;
     name: string;
     description: string | null;
+    categoryId: string | null;
+    category: ClientServiceCategory | null;
   };
+
   project: {
     id: string;
     projectCode: string;
     name: string;
     status: string;
   };
+
   workflowInstance: {
     id: string;
     status: string;
@@ -471,8 +483,22 @@ export const clientPortalService = {
     });
   },
 
+  async getServiceCategories() {
+    return apiClient<{
+      success: boolean;
+      data: {
+        categories: ClientServiceCategory[];
+        hasUncategorized: boolean;
+      };
+    }>("/client/services/categories", {
+      method: "GET",
+      cache: "no-store",
+    });
+  },
+
   async getServices(params?: {
     projectId?: string;
+    categoryId?: string;
     status?: string;
     search?: string;
     page?: number;
@@ -480,11 +506,29 @@ export const clientPortalService = {
   }) {
     const query = new URLSearchParams();
 
-    if (params?.projectId) query.set("projectId", params.projectId);
-    if (params?.status) query.set("status", params.status);
-    if (params?.search) query.set("search", params.search);
-    if (params?.page) query.set("page", String(params.page));
-    if (params?.limit) query.set("limit", String(params.limit));
+    if (params?.projectId) {
+      query.set("projectId", params.projectId);
+    }
+
+    if (params?.categoryId) {
+      query.set("categoryId", params.categoryId);
+    }
+
+    if (params?.status) {
+      query.set("status", params.status);
+    }
+
+    if (params?.search) {
+      query.set("search", params.search);
+    }
+
+    if (params?.page) {
+      query.set("page", String(params.page));
+    }
+
+    if (params?.limit) {
+      query.set("limit", String(params.limit));
+    }
 
     const suffix = query.toString() ? `?${query.toString()}` : "";
 
@@ -499,9 +543,9 @@ export const clientPortalService = {
       };
     }>(`/client/services${suffix}`, {
       method: "GET",
+      cache: "no-store",
     });
   },
-
   async getDocuments(params?: {
     projectId?: string;
     search?: string;

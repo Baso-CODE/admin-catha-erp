@@ -196,12 +196,13 @@ export function QuotationTable({
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <div className="overflow-hidden rounded-lg border">
+        <div className="max-w-full overflow-x-auto rounded-lg border">
           <Table>
             <TableHeader className="bg-muted/50">
               <TableRow>
                 <TableHead>Quotation No</TableHead>
                 <TableHead>Version</TableHead>
+                <TableHead>Services</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-center">Contract</TableHead>
@@ -213,14 +214,14 @@ export function QuotationTable({
               {loading ? (
                 <TableRow>
                   <TableCell
-                    colSpan={6}
+                    colSpan={7}
                     className="h-32 text-center text-sm text-muted-foreground">
                     Memuat quotation...
                   </TableCell>
                 </TableRow>
               ) : quotations.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-32 text-center">
+                  <TableCell colSpan={7} className="h-32 text-center">
                     <FileText className="mx-auto mb-3 size-8 text-muted-foreground" />
 
                     <p className="text-sm font-medium">Belum ada quotation</p>
@@ -238,6 +239,32 @@ export function QuotationTable({
                     </TableCell>
 
                     <TableCell>{quotation.version}</TableCell>
+
+                    <TableCell>
+                      {(quotation.serviceItems?.length ?? 0) > 0 ? (
+                        <div className="space-y-1">
+                          <Badge variant="outline">
+                            {quotation.serviceItems?.length ?? 0} Services
+                          </Badge>
+
+                          <p className="text-xs text-muted-foreground">
+                            {
+                              new Set(
+                                (quotation.serviceItems ?? []).map(
+                                  (item) =>
+                                    item.categoryIdSnapshot ?? "uncategorized",
+                                ),
+                              ).size
+                            }{" "}
+                            grup kategori
+                          </p>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">
+                          Belum ditentukan
+                        </span>
+                      )}
+                    </TableCell>
 
                     <TableCell className="font-medium">
                       {formatCurrency(quotation.amount)}

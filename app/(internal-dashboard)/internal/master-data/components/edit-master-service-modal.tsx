@@ -36,6 +36,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { ServiceCategorySelect } from "./service-category-select";
 
 const schema = z.object({
   code: z
@@ -52,6 +53,7 @@ const schema = z.object({
     .optional(),
   workflowTemplateId: z.string().optional(),
   isActive: z.boolean(),
+  categoryId: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -86,16 +88,19 @@ export function EditMasterServiceModal({
       description: item.description ?? "",
       workflowTemplateId: item.workflowTemplateId ?? "",
       isActive: item.isActive,
+      categoryId: item.categoryId ?? "",
     },
   });
 
   const workflowTemplateId = watch("workflowTemplateId");
   const isActive = watch("isActive");
+  const categoryId = watch("categoryId");
 
   useEffect(() => {
     reset({
       code: item.code,
       name: item.name,
+      categoryId: item.categoryId ?? "",
       description: item.description ?? "",
       workflowTemplateId: item.workflowTemplateId ?? "",
       isActive: item.isActive,
@@ -137,6 +142,7 @@ export function EditMasterServiceModal({
       reset({
         code: item.code,
         name: item.name,
+        categoryId: item.categoryId ?? "",
         description: item.description ?? "",
         workflowTemplateId: item.workflowTemplateId ?? "",
         isActive: item.isActive,
@@ -150,6 +156,11 @@ export function EditMasterServiceModal({
         code: values.code.trim(),
         name: values.name.trim(),
         description: values.description?.trim() || undefined,
+
+        ...(values.categoryId !== (item.categoryId ?? "") && {
+          categoryId: values.categoryId || null,
+        }),
+
         workflowTemplateId: values.workflowTemplateId || null,
         isActive: values.isActive,
       });
@@ -173,7 +184,7 @@ export function EditMasterServiceModal({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
 
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Edit Master Service</DialogTitle>
           <DialogDescription>
@@ -223,6 +234,19 @@ export function EditMasterServiceModal({
               </p>
             )}
           </div>
+
+          <ServiceCategorySelect
+            open={open}
+            value={categoryId}
+            currentCategory={item.category}
+            disabled={isSubmitting}
+            onChange={(value) =>
+              setValue("categoryId", value, {
+                shouldDirty: true,
+                shouldValidate: true,
+              })
+            }
+          />
 
           <div className="space-y-2">
             <Label>Default Workflow Template</Label>

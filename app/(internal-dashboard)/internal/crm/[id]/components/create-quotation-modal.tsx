@@ -1,11 +1,5 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { FilePlus2, Loader2 } from "lucide-react";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { toast } from "sonner";
-
 import {
   CreateQuotationPayload,
   quotationService,
@@ -22,11 +16,17 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { FilePlus2, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 import {
   CreateQuotationFormValues,
   createQuotationSchema,
 } from "./quotation-form-schema";
+import { QuotationServicePicker } from "./quotation-service-picker";
 
 interface CreateQuotationModalProps {
   leadId: string;
@@ -39,7 +39,9 @@ export function CreateQuotationModal({
 }: CreateQuotationModalProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
 
+  const [servicesReady, setServicesReady] = useState(false);
   const {
     register,
     handleSubmit,
@@ -54,6 +56,8 @@ export function CreateQuotationModal({
 
   const handleOpenChange = (value: boolean) => {
     setOpen(value);
+    setSelectedServiceIds([]);
+    setServicesReady(false);
 
     if (!value) {
       reset({
@@ -63,12 +67,18 @@ export function CreateQuotationModal({
   };
 
   const onSubmit = async (values: CreateQuotationFormValues) => {
+    if (!servicesReady) {
+      toast.error("Katalog layanan belum berhasil dimuat.");
+      return;
+    }
+
     try {
       setLoading(true);
 
       const payload: CreateQuotationPayload = {
         leadId,
         amount: values.amount,
+        masterServiceIds: selectedServiceIds,
       };
 
       const response = await quotationService.create(payload);
@@ -91,7 +101,6 @@ export function CreateQuotationModal({
       setLoading(false);
     }
   };
-
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
@@ -101,7 +110,7 @@ export function CreateQuotationModal({
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Buat Quotation Baru</DialogTitle>
 
@@ -111,6 +120,15 @@ export function CreateQuotationModal({
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 pt-2">
+          <QuotationServicePicker
+            open={open}
+            leadId={leadId}
+            value={selectedServiceIds}
+            onChange={setSelectedServiceIds}
+            onReady={setServicesReady}
+            disabled={loading}
+          />
+
           <div className="space-y-2">
             <Label htmlFor="amount">Amount</Label>
 
@@ -165,7 +183,7 @@ export function CreateQuotationModal({
               Batal
             </Button>
 
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading || !servicesReady}>
               {loading && <Loader2 className="mr-2 size-4 animate-spin" />}
               Simpan Quotation
             </Button>

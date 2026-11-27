@@ -144,7 +144,7 @@ export const contactPersonService = {
     return apiClient<{
       success: boolean;
       data: ClientPortalUserOption[];
-    }>(`/clients/contact-persons/portal-users/options${suffix}`);
+    }>(`/contact-persons/portal-users/options${suffix}`);
   },
 
   createContactPerson(payload: CreateContactPersonPayload) {

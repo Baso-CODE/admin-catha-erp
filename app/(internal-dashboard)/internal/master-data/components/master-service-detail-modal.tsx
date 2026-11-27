@@ -1,6 +1,5 @@
 "use client";
-
-import { FileText, Layers3, Workflow } from "lucide-react";
+import { FileText, FolderTree, Layers3, Workflow } from "lucide-react";
 import { ReactNode } from "react";
 
 import { MasterServiceItem } from "@/app/services/masterService.service";
@@ -57,6 +56,18 @@ export function MasterServiceDetailModal({
             icon={FileText}
             label="Deskripsi"
             value={item.description || "-"}
+          />
+
+          <DetailItem
+            icon={FolderTree}
+            label="Service Category"
+            value={
+              item.category
+                ? `${item.category.name}${
+                    item.category.isActive ? "" : " (Tidak Aktif)"
+                  }`
+                : "Uncategorized"
+            }
           />
 
           <DetailItem

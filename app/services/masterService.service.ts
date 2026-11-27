@@ -17,11 +17,20 @@ export interface MasterServiceItem {
   };
   createdAt: string;
   updatedAt: string;
+  categoryId?: string | null;
+
+  category?: {
+    id: string;
+    code: string;
+    name: string;
+    isActive: boolean;
+  } | null;
 }
 
 export interface MasterServiceListParams {
   search?: string;
   isActive?: boolean;
+  categoryId?: string;
   page?: number;
   limit?: number;
 }
@@ -49,6 +58,7 @@ export interface CreateMasterServicePayload {
   name: string;
   description?: string;
   isActive?: boolean;
+  categoryId?: string;
   workflowTemplateId?: string;
 }
 export interface UpdateMasterServicePayload {
@@ -56,6 +66,7 @@ export interface UpdateMasterServicePayload {
   name?: string;
   description?: string;
   isActive?: boolean;
+  categoryId?: string | null;
   workflowTemplateId?: string | null;
 }
 export const masterServiceService = {
@@ -68,6 +79,10 @@ export const masterServiceService = {
 
     if (params?.isActive !== undefined) {
       searchParams.set("isActive", String(params.isActive));
+    }
+
+    if (params?.categoryId) {
+      searchParams.set("categoryId", params.categoryId);
     }
 
     if (params?.page) {

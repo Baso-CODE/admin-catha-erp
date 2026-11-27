@@ -21,6 +21,23 @@ export interface ContractQuotation {
   status: string;
 }
 
+export interface ContractServiceLine {
+  id: string;
+  contractId: string;
+  masterServiceId: string;
+
+  serviceCodeSnapshot: string;
+  serviceNameSnapshot: string;
+  serviceDescriptionSnapshot: string | null;
+
+  categoryIdSnapshot: string | null;
+  categoryCodeSnapshot: string | null;
+  categoryNameSnapshot: string | null;
+  categorySortOrderSnapshot: number | null;
+
+  createdAt: string;
+}
+
 export interface ContractItem {
   id: string;
   contractNo: string;
@@ -40,6 +57,7 @@ export interface ContractItem {
   renewalReminder: boolean;
   client: ContractClient;
   quotation?: ContractQuotation | null;
+  serviceItems?: ContractServiceLine[];
   createdAt: string;
   updatedAt: string;
   _count?: {

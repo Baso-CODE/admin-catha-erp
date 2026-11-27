@@ -23,27 +23,34 @@ export function ProjectDetailClient({ permissions }: ProjectDetailClientProps) {
   const [project, setProject] = useState<ProjectItem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const loadProject = useCallback(async () => {
-    try {
-      setIsLoading(true);
+  const loadProject = useCallback(
+    async (showLoading = false) => {
+      try {
+        if (showLoading) {
+          setIsLoading(true);
+        }
 
-      const response = await projectService.getById(projectId);
+        const response = await projectService.getById(projectId);
 
-      setProject(response.data);
-    } catch (error) {
-      toast.error("Gagal mengambil detail project.", {
-        description:
-          error instanceof Error
-            ? error.message
-            : "Terjadi kesalahan pada server.",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [projectId]);
+        setProject(response.data);
+      } catch (error) {
+        toast.error("Gagal mengambil detail project.", {
+          description:
+            error instanceof Error
+              ? error.message
+              : "Terjadi kesalahan pada server.",
+        });
+      } finally {
+        if (showLoading) {
+          setIsLoading(false);
+        }
+      }
+    },
+    [projectId],
+  );
 
   useEffect(() => {
-    void loadProject();
+    void loadProject(true);
   }, [loadProject]);
 
   if (isLoading) {
@@ -94,6 +101,7 @@ export function ProjectDetailClient({ permissions }: ProjectDetailClientProps) {
         <TabsContent value="services" className="mt-0">
           <ProjectServiceTable
             projectId={project.id}
+            contractId={project.contractId}
             permissions={permissions}
             onRefreshProject={loadProject}
           />

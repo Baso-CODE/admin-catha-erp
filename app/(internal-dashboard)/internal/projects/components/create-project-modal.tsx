@@ -14,6 +14,7 @@ import {
   UserOptionItem,
   userService,
 } from "@/app/services/userManagement.service";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -34,6 +35,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { QuotationServiceSummary } from "../../crm/[id]/components/quotation-service-summary";
 
 interface UserItem {
   id: string;
@@ -105,6 +107,9 @@ export function CreateProjectModal({ onSuccess }: CreateProjectModalProps) {
 
   const clientId = watch("clientId");
   const contractId = watch("contractId");
+  const selectedContract = contracts.find(
+    (contract) => contract.id === contractId && contract.clientId === clientId,
+  );
   const projectManagerId = watch("projectManagerId");
   const status = watch("status");
 
@@ -346,6 +351,34 @@ export function CreateProjectModal({ onSuccess }: CreateProjectModalProps) {
               </Select>
             </div>
           </div>
+
+          {selectedContract && (
+            <div className="space-y-4 rounded-xl border bg-muted/20 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h3 className="text-sm font-semibold">Contracted Services</h3>
+
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Layanan yang telah disepakati pada contract ini.
+                  </p>
+                </div>
+
+                <Badge variant="outline">
+                  {selectedContract.serviceItems?.length ?? 0} Services
+                </Badge>
+              </div>
+
+              <QuotationServiceSummary
+                items={selectedContract.serviceItems ?? []}
+              />
+
+              <div className="rounded-lg border bg-background p-3 text-xs text-muted-foreground">
+                {selectedContract.status === "ACTIVE"
+                  ? "Setelah project dibuat, buka tab Services dan gunakan Import from Contract untuk memilih layanan yang akan dikerjakan."
+                  : "Project dapat dipersiapkan terlebih dahulu. Import layanan tersedia setelah contract berstatus Active."}
+              </div>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label>Project Manager</Label>

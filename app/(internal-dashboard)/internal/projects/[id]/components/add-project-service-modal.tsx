@@ -1,17 +1,19 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { FolderTree, Loader2, Plus, Workflow } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
+import { groupServicesByCategory } from "@/app/lib/group-services-by-category";
+
 import {
-  MasterServiceItem,
-  masterServiceService,
-} from "@/app/services/masterService.service";
-import { projectServiceService } from "@/app/services/projectService.service";
+  projectServiceService,
+  type AvailableMasterService,
+} from "@/app/services/projectService.service";
+
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -27,7 +29,10 @@ import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -61,8 +66,13 @@ export function AddProjectServiceModal({
   onSuccess,
 }: AddProjectServiceModalProps) {
   const [open, setOpen] = useState(false);
-  const [services, setServices] = useState<MasterServiceItem[]>([]);
+
+  const [services, setServices] = useState<AvailableMasterService[]>([]);
+
   const [isLoadingServices, setIsLoadingServices] = useState(false);
+
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   const {
     register,
@@ -82,21 +92,37 @@ export function AddProjectServiceModal({
 
   const masterServiceId = watch("masterServiceId");
 
+  const groupedServices = useMemo(
+    () => groupServicesByCategory(services),
+    [services],
+  );
+
+  const selectedService = services.find(
+    (service) => service.id === masterServiceId,
+  );
+
   useEffect(() => {
     if (!open) return;
 
-    const loadServices = async () => {
+    let active = true;
+
+    async function loadServices() {
       try {
         setIsLoadingServices(true);
+        setLoadError(false);
 
-        const response = await masterServiceService.getAll({
-          isActive: true,
-          page: 1,
-          limit: 100,
-        });
+        const response =
+          await projectServiceService.getAvailableMasterServices(projectId);
+
+        if (!active) return;
 
         setServices(response.data);
       } catch (error) {
+        if (!active) return;
+
+        setServices([]);
+        setLoadError(true);
+
         toast.error("Gagal mengambil master service.", {
           description:
             error instanceof Error
@@ -104,22 +130,47 @@ export function AddProjectServiceModal({
               : "Terjadi kesalahan pada server.",
         });
       } finally {
-        setIsLoadingServices(false);
+        if (active) {
+          setIsLoadingServices(false);
+        }
       }
-    };
+    }
 
     void loadServices();
-  }, [open]);
+
+    return () => {
+      active = false;
+    };
+  }, [open, projectId, reloadKey]);
 
   const handleOpenChange = (value: boolean) => {
+    if (isSubmitting) return;
+
+    if (value) {
+      reset();
+      setServices([]);
+      setLoadError(false);
+      setIsLoadingServices(true);
+    }
+
     setOpen(value);
 
     if (!value) {
       reset();
+      setServices([]);
     }
   };
 
   const onSubmit = async (values: FormValues) => {
+    if (
+      isLoadingServices ||
+      loadError ||
+      !services.some((service) => service.id === values.masterServiceId)
+    ) {
+      toast.error("Service yang dipilih tidak tersedia.");
+      return;
+    }
+
     try {
       await projectServiceService.create({
         projectId,
@@ -132,8 +183,7 @@ export function AddProjectServiceModal({
 
       setOpen(false);
       reset();
-
-      await onSuccess?.();
+      setServices([]);
     } catch (error) {
       toast.error("Gagal menambahkan project service.", {
         description:
@@ -141,6 +191,14 @@ export function AddProjectServiceModal({
             ? error.message
             : "Terjadi kesalahan pada server.",
       });
+
+      return;
+    }
+
+    try {
+      await onSuccess?.();
+    } catch {
+      toast.error("Service tersimpan, tetapi data halaman gagal diperbarui.");
     }
   };
 
@@ -153,45 +211,66 @@ export function AddProjectServiceModal({
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Tambah Project Service</DialogTitle>
 
           <DialogDescription>
-            Tambahkan service ke project. Workflow default akan dibuat otomatis
-            jika tersedia.
+            Pilih layanan berdasarkan kategori. Workflow default akan dibuat
+            otomatis jika tersedia.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <div className="space-y-2">
-            <Label>Master Service</Label>
+            <Label htmlFor="project-master-service">Master Service</Label>
 
             <Select
-              value={masterServiceId || undefined}
+              value={masterServiceId || ""}
+              disabled={
+                isLoadingServices ||
+                isSubmitting ||
+                loadError ||
+                services.length === 0
+              }
               onValueChange={(value) =>
                 setValue("masterServiceId", value, {
+                  shouldDirty: true,
                   shouldValidate: true,
                 })
-              }
-              disabled={isLoadingServices}>
-              <SelectTrigger>
+              }>
+              <SelectTrigger id="project-master-service" className="w-full">
                 <SelectValue
                   placeholder={
                     isLoadingServices
                       ? "Memuat service..."
-                      : "Pilih master service"
+                      : loadError
+                        ? "Gagal memuat service"
+                        : services.length === 0
+                          ? "Tidak ada service tersedia"
+                          : "Pilih master service"
                   }
                 />
               </SelectTrigger>
 
-              <SelectContent>
-                {services.map((service) => (
-                  <SelectItem key={service.id} value={service.id}>
-                    {service.name}
-                    {" · "}
-                    {service.code}
-                  </SelectItem>
+              <SelectContent className="max-h-80">
+                {groupedServices.map((group, index) => (
+                  <SelectGroup key={group.id}>
+                    {index > 0 && <SelectSeparator />}
+
+                    <SelectLabel className="px-2 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      {group.name}
+                      {!group.isActive && " (Tidak Aktif)"}
+                    </SelectLabel>
+
+                    {group.services.map((service) => (
+                      <SelectItem key={service.id} value={service.id}>
+                        {service.name}
+                        {" · "}
+                        {service.code}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
                 ))}
               </SelectContent>
             </Select>
@@ -202,14 +281,29 @@ export function AddProjectServiceModal({
               </p>
             )}
 
-            {masterServiceId && (
-              <ServiceWorkflowInfo
-                service={services.find(
-                  (service) => service.id === masterServiceId,
-                )}
-              />
-            )}
+            {loadError ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={isLoadingServices}
+                onClick={() => setReloadKey((current) => current + 1)}>
+                Coba Lagi
+              </Button>
+            ) : !isLoadingServices && services.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                Seluruh service aktif sudah ditambahkan atau belum ada master
+                service aktif.
+              </p>
+            ) : !isLoadingServices ? (
+              <p className="text-xs text-muted-foreground">
+                {services.length} service tersedia dalam{" "}
+                {groupedServices.length} grup.
+              </p>
+            ) : null}
           </div>
+
+          {selectedService && <ServiceWorkflowInfo service={selectedService} />}
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
@@ -218,6 +312,7 @@ export function AddProjectServiceModal({
               <Input
                 id="service-start-date"
                 type="date"
+                disabled={isSubmitting}
                 {...register("startDate")}
               />
             </div>
@@ -228,6 +323,7 @@ export function AddProjectServiceModal({
               <Input
                 id="service-end-date"
                 type="date"
+                disabled={isSubmitting}
                 {...register("endDate")}
               />
 
@@ -243,12 +339,19 @@ export function AddProjectServiceModal({
             <Button
               type="button"
               variant="outline"
-              onClick={() => setOpen(false)}
-              disabled={isSubmitting}>
+              disabled={isSubmitting}
+              onClick={() => handleOpenChange(false)}>
               Batal
             </Button>
 
-            <Button type="submit" disabled={isSubmitting || isLoadingServices}>
+            <Button
+              type="submit"
+              disabled={
+                isSubmitting ||
+                isLoadingServices ||
+                loadError ||
+                !selectedService
+              }>
               {isSubmitting && <Loader2 className="size-4 animate-spin" />}
               Tambahkan Service
             </Button>
@@ -259,26 +362,48 @@ export function AddProjectServiceModal({
   );
 }
 
-function ServiceWorkflowInfo({ service }: { service?: MasterServiceItem }) {
-  if (!service) return null;
-
+function ServiceWorkflowInfo({ service }: { service: AvailableMasterService }) {
   return (
-    <div className="rounded-lg border bg-muted/20 p-3">
-      <p className="text-xs text-muted-foreground">Default Workflow</p>
+    <div className="divide-y rounded-lg border bg-muted/20">
+      <div className="flex items-start gap-3 p-3">
+        <div className="rounded-md bg-muted p-2">
+          <FolderTree className="size-4 text-muted-foreground" />
+        </div>
 
-      <p className="mt-1 text-sm font-medium">
-        {service.defaultTemplate?.name ?? "Tidak memiliki default workflow"}
-      </p>
+        <div className="min-w-0">
+          <p className="text-xs text-muted-foreground">Service Category</p>
 
-      {service.defaultTemplate ? (
-        <p className="mt-1 text-xs text-muted-foreground">
-          Workflow instance akan dibuat otomatis setelah service ditambahkan.
-        </p>
-      ) : (
-        <p className="mt-1 text-xs text-muted-foreground">
-          Project service tetap dapat dibuat tanpa workflow instance.
-        </p>
-      )}
+          <p className="mt-1 text-sm font-medium">
+            {service.category?.name ?? "Uncategorized"}
+          </p>
+
+          {service.category && !service.category.isActive && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              Kategori tidak aktif. Service masih aktif.
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="flex items-start gap-3 p-3">
+        <div className="rounded-md bg-muted p-2">
+          <Workflow className="size-4 text-muted-foreground" />
+        </div>
+
+        <div className="min-w-0">
+          <p className="text-xs text-muted-foreground">Default Workflow</p>
+
+          <p className="mt-1 text-sm font-medium">
+            {service.defaultTemplate?.name ?? "Tidak memiliki default workflow"}
+          </p>
+
+          <p className="mt-1 text-xs text-muted-foreground">
+            {service.defaultTemplate
+              ? "Workflow instance akan dibuat otomatis setelah service ditambahkan."
+              : "Project service tetap dapat dibuat tanpa workflow instance."}
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
