@@ -1,5 +1,36 @@
 import { apiClient } from "@/lib/api";
 
+export interface QuotationServiceLine {
+  id: string;
+  quotationId: string;
+  masterServiceId: string;
+
+  serviceCodeSnapshot: string;
+  serviceNameSnapshot: string;
+  serviceDescriptionSnapshot: string | null;
+
+  categoryIdSnapshot: string | null;
+  categoryCodeSnapshot: string | null;
+  categoryNameSnapshot: string | null;
+  categorySortOrderSnapshot: number | null;
+
+  createdAt: string;
+}
+
+export interface QuotationServiceOption {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+
+  category: {
+    id: string;
+    code: string;
+    name: string;
+    sortOrder: number;
+    isActive: boolean;
+  } | null;
+}
 export interface QuotationItem {
   id: string;
   quotationNo: string;
@@ -9,7 +40,7 @@ export interface QuotationItem {
   status: string;
   createdAt: string;
   updatedAt: string;
-
+  serviceItems?: QuotationServiceLine[];
   lead?: {
     id: string;
     leadCode: string;
@@ -28,11 +59,13 @@ export interface QuotationItem {
 export interface CreateQuotationPayload {
   leadId: string;
   amount: number;
+  masterServiceIds?: string[];
 }
 
 export interface UpdateQuotationPayload {
   amount?: number;
   status?: string;
+  masterServiceIds?: string[];
 }
 
 export interface QuotationListParams {
@@ -108,5 +141,19 @@ export const quotationService = {
     }>(`/quotations/${id}`, {
       method: "DELETE",
     });
+  },
+
+  async getCreateServiceOptions(leadId: string) {
+    return apiClient<{
+      success: boolean;
+      data: QuotationServiceOption[];
+    }>(`/quotations/service-options/leads/${encodeURIComponent(leadId)}`);
+  },
+
+  async getEditServiceOptions(quotationId: string) {
+    return apiClient<{
+      success: boolean;
+      data: QuotationServiceOption[];
+    }>(`/quotations/${encodeURIComponent(quotationId)}/service-options`);
   },
 };

@@ -8,12 +8,15 @@ import { toast } from "sonner";
 import * as z from "zod";
 
 import {
+  contractService,
   ContractStatus,
   CreateContractPayload,
-  contractService,
 } from "@/app/services/contract.service";
 
-import { quotationService } from "@/app/services/crm/quotation.service";
+import {
+  quotationService,
+  QuotationServiceLine,
+} from "@/app/services/crm/quotation.service";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -35,6 +38,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { QuotationServiceSummary } from "../../../crm/[id]/components/quotation-service-summary";
 
 const createContractSchema = z
   .object({
@@ -89,8 +93,8 @@ interface QuotationOption {
   quotationNo: string;
   amount: string | number;
   status: string;
+  serviceItems?: QuotationServiceLine[];
 }
-
 interface CreateContractModalProps {
   clientId: string;
   sourceLeadId?: string | null;
@@ -137,6 +141,9 @@ export function CreateContractModal({
     control,
     name: "quotationId",
   });
+  const selectedQuotation = quotations.find(
+    (quotation) => quotation.id === quotationId,
+  );
 
   const status = useWatch({
     control,
@@ -156,24 +163,42 @@ export function CreateContractModal({
     async function loadQuotations() {
       try {
         setLoadingQuotations(true);
+        setQuotations([]);
 
-        const response = await quotationService.getAll({
-          leadId,
-          page: 1,
-          limit: 100,
-        });
+        const results: QuotationOption[] = [];
+        let currentPage = 1;
+        let totalPages = 1;
 
-        if (response.success) {
-          setQuotations(
-            response.data.map((quotation) => ({
+        do {
+          const response = await quotationService.getAll({
+            leadId,
+            status: "APPROVED",
+            page: currentPage,
+            limit: 100,
+          });
+
+          if (!response.success) {
+            throw new Error("Gagal mengambil quotation.");
+          }
+
+          results.push(
+            ...response.data.map((quotation) => ({
               id: quotation.id,
               quotationNo: quotation.quotationNo,
               amount: quotation.amount,
               status: quotation.status,
+              serviceItems: quotation.serviceItems ?? [],
             })),
           );
-        }
+
+          totalPages = response.meta.totalPages;
+          currentPage++;
+        } while (currentPage <= totalPages);
+
+        setQuotations(results);
       } catch (error) {
+        setQuotations([]);
+
         toast.error("Gagal memuat quotation", {
           description:
             error instanceof Error
@@ -319,6 +344,8 @@ export function CreateContractModal({
                   {quotations.map((quotation) => (
                     <SelectItem key={quotation.id} value={quotation.id}>
                       {quotation.quotationNo}
+                      {" · "}
+                      {quotation.serviceItems?.length ?? 0} Services
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -336,6 +363,22 @@ export function CreateContractModal({
               />
             </div>
           </div>
+          {selectedQuotation && (
+            <div className="space-y-3 rounded-xl border bg-muted/20 p-4">
+              <div>
+                <h3 className="text-sm font-semibold">Contracted Services</h3>
+
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Layanan dari quotation {selectedQuotation.quotationNo} akan
+                  otomatis disalin ke contract.
+                </p>
+              </div>
+
+              <QuotationServiceSummary
+                items={selectedQuotation.serviceItems ?? []}
+              />
+            </div>
+          )}
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">

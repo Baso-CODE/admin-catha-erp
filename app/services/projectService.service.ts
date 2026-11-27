@@ -2,6 +2,28 @@ import { apiClient } from "@/lib/api";
 
 export type WorkflowStatus = "RUNNING" | "PAUSED" | "COMPLETED" | "CANCELLED";
 
+export interface ProjectServiceCategory {
+  id: string;
+  code: string;
+  name: string;
+  isActive: boolean;
+  sortOrder: number;
+}
+
+export interface AvailableMasterService {
+  id: string;
+  code: string;
+  name: string;
+
+  category: ProjectServiceCategory | null;
+
+  defaultTemplate: {
+    id: string;
+    name: string;
+    description: string | null;
+  } | null;
+}
+
 export interface ProjectServiceItem {
   id: string;
   projectId: string;
@@ -22,6 +44,8 @@ export interface ProjectServiceItem {
     name: string;
     description?: string | null;
     isActive?: boolean;
+    categoryId?: string | null;
+    category?: ProjectServiceCategory | null;
   };
 
   workflowInstance?: {
@@ -71,6 +95,61 @@ export interface CreateProjectServicePayload {
 export interface UpdateProjectServicePayload {
   startDate?: string | null;
   endDate?: string | null;
+}
+
+export interface ContractHandoffItem {
+  id: string;
+  masterServiceId: string;
+
+  serviceCodeSnapshot: string;
+  serviceNameSnapshot: string;
+  serviceDescriptionSnapshot: string | null;
+
+  categoryIdSnapshot: string | null;
+  categoryCodeSnapshot: string | null;
+  categoryNameSnapshot: string | null;
+  categorySortOrderSnapshot: number | null;
+
+  currentServiceName: string;
+
+  workflowTemplate: {
+    id: string;
+    name: string;
+  } | null;
+
+  availability: "AVAILABLE" | "ALREADY_ADDED" | "INACTIVE";
+}
+
+export interface ContractHandoffData {
+  contract: {
+    id: string;
+    contractNo: string;
+    title: string;
+    status: string;
+  };
+
+  canImport: boolean;
+
+  items: ContractHandoffItem[];
+
+  summary: {
+    total: number;
+    available: number;
+    alreadyAdded: number;
+    inactive: number;
+  };
+}
+
+export interface ContractHandoffResult {
+  projectId: string;
+  contractId: string;
+
+  requestedCount: number;
+  createdCount: number;
+  skippedCount: number;
+  workflowCreated: number;
+
+  createdIds: string[];
 }
 
 export const projectServiceService = {
@@ -130,5 +209,47 @@ export const projectServiceService = {
     }>(`/project-services/${id}`, {
       method: "DELETE",
     });
+  },
+
+  async getAvailableMasterServices(projectId: string) {
+    return apiClient<{
+      success: boolean;
+      data: AvailableMasterService[];
+    }>(`/project-services/available/${encodeURIComponent(projectId)}`, {
+      method: "GET",
+    });
+  },
+
+  async getContractHandoff(projectId: string, contractId: string) {
+    return apiClient<{
+      success: boolean;
+      data: ContractHandoffData;
+    }>(
+      `/project-services/contract-handoff/${encodeURIComponent(projectId)}/${encodeURIComponent(contractId)}`,
+      {
+        method: "GET",
+        cache: "no-store",
+      },
+    );
+  },
+
+  async importContractServices(
+    projectId: string,
+    contractId: string,
+    masterServiceIds: string[],
+  ) {
+    return apiClient<{
+      success: boolean;
+      message: string;
+      data: ContractHandoffResult;
+    }>(
+      `/project-services/contract-handoff/${encodeURIComponent(projectId)}/${encodeURIComponent(contractId)}`,
+      {
+        method: "POST",
+        body: {
+          masterServiceIds,
+        },
+      },
+    );
   },
 };

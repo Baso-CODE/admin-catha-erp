@@ -1,5 +1,4 @@
 "use client";
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Pencil } from "lucide-react";
 import { ReactNode, useEffect, useState } from "react";
@@ -36,6 +35,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { QuotationServiceSummary } from "../../../crm/[id]/components/quotation-service-summary";
 
 const editContractSchema = z
   .object({
@@ -225,7 +225,6 @@ export function EditContractModal({
 
       const payload: UpdateContractPayload = {
         title: values.title.trim(),
-        quotationId: values.quotationId || undefined,
         contractType: values.contractType?.trim() || undefined,
         startDate: values.startDate,
         endDate: values.endDate,
@@ -301,30 +300,17 @@ export function EditContractModal({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label>Quotation</Label>
+              <Label>Source Quotation</Label>
 
-              <Select
-                value={quotationId || "NONE"}
-                disabled={loading || loadingQuotations || !sourceLeadId}
-                onValueChange={(value) =>
-                  setValue("quotationId", value === "NONE" ? "" : value, {
-                    shouldDirty: true,
-                  })
-                }>
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
+              <Input
+                value={contract.quotation?.quotationNo ?? "Tanpa Quotation"}
+                readOnly
+                className="bg-muted/40"
+              />
 
-                <SelectContent>
-                  <SelectItem value="NONE">Tanpa Quotation</SelectItem>
-
-                  {quotations.map((quotation) => (
-                    <SelectItem key={quotation.id} value={quotation.id}>
-                      {quotation.quotationNo}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <p className="text-xs text-muted-foreground">
+                Quotation sumber tidak dapat diubah.
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -336,6 +322,18 @@ export function EditContractModal({
                 {...register("contractType")}
               />
             </div>
+          </div>
+
+          <div className="space-y-3">
+            <div>
+              <h3 className="text-sm font-semibold">Contracted Services</h3>
+
+              <p className="text-xs text-muted-foreground">
+                Snapshot layanan yang tersimpan pada contract.
+              </p>
+            </div>
+
+            <QuotationServiceSummary items={contract.serviceItems ?? []} />
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -510,7 +508,7 @@ export function EditContractModal({
               Batal
             </Button>
 
-            <Button type="submit" disabled={loading || loadingQuotations}>
+            <Button type="submit" disabled={loading}>
               {loading && <Loader2 className="mr-2 size-4 animate-spin" />}
               Simpan Perubahan
             </Button>

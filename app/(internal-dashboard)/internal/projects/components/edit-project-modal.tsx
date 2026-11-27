@@ -93,7 +93,7 @@ export function EditProjectModal({
   const [projectManagers, setProjectManagers] = useState<UserOptionItem[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [isLoadingContracts, setIsLoadingContracts] = useState(false);
-
+  const hasServices = (item._count?.services ?? 0) > 0;
   const {
     register,
     handleSubmit,
@@ -308,7 +308,7 @@ export function EditProjectModal({
                   });
                   setValue("contractId", "");
                 }}
-                disabled={isLoadingData}>
+                disabled={isLoadingData || hasServices}>
                 <SelectTrigger>
                   <SelectValue placeholder="Pilih client" />
                 </SelectTrigger>
@@ -337,7 +337,7 @@ export function EditProjectModal({
                 onValueChange={(value) =>
                   setValue("contractId", value === "none" ? "" : value)
                 }
-                disabled={!clientId || isLoadingContracts}>
+                disabled={!clientId || isLoadingContracts || hasServices}>
                 <SelectTrigger>
                   <SelectValue placeholder="Pilih contract" />
                 </SelectTrigger>
@@ -353,6 +353,13 @@ export function EditProjectModal({
                 </SelectContent>
               </Select>
             </div>
+
+            {hasServices && (
+              <p className="rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground">
+                Client dan Contract tidak dapat diubah karena project sudah
+                memiliki layanan.
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">

@@ -1,14 +1,11 @@
 "use client";
 
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
-
 import {
   ProjectServiceItem,
   projectServiceService,
 } from "@/app/services/projectService.service";
 import { PermissionGuard } from "@/components/shared/permission-guard";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -24,18 +21,24 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { ConfirmDeleteDialog } from "../../../crm/[id]/components/confirm-delete-dialog";
 import { AddProjectServiceModal } from "./add-project-service-modal";
 import { EditProjectServiceModal } from "./edit-project-service-modal";
+import { ImportContractServicesModal } from "./import-contract-services-modal";
 
 interface ProjectServiceTableProps {
   projectId: string;
+  contractId?: string | null;
   permissions: string[];
   onRefreshProject?: () => void | Promise<void>;
 }
 
 export function ProjectServiceTable({
   projectId,
+  contractId,
   permissions,
   onRefreshProject,
 }: ProjectServiceTableProps) {
@@ -108,18 +111,29 @@ export function ProjectServiceTable({
         <PermissionGuard
           permissions={permissions}
           required="project.service.create">
-          <AddProjectServiceModal
-            projectId={projectId}
-            onSuccess={handleRefresh}
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            {contractId && (
+              <ImportContractServicesModal
+                projectId={projectId}
+                contractId={contractId}
+                onSuccess={handleRefresh}
+              />
+            )}
+
+            <AddProjectServiceModal
+              projectId={projectId}
+              onSuccess={handleRefresh}
+            />
+          </div>
         </PermissionGuard>
       </div>
 
-      <div className="rounded-xl border">
+      <div className="max-w-full overflow-x-auto rounded-xl border">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Service</TableHead>
+              <TableHead>Category</TableHead>
               <TableHead>Periode</TableHead>
               <TableHead>Workflow</TableHead>
               <TableHead>Current Step</TableHead>
@@ -131,7 +145,7 @@ export function ProjectServiceTable({
             {isLoading ? (
               <TableRow>
                 <TableCell
-                  colSpan={5}
+                  colSpan={6}
                   className="h-24 text-center text-muted-foreground">
                   Memuat data...
                 </TableCell>
@@ -139,7 +153,7 @@ export function ProjectServiceTable({
             ) : items.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={5}
+                  colSpan={6}
                   className="h-24 text-center text-muted-foreground">
                   Project belum memiliki service.
                 </TableCell>
@@ -157,6 +171,26 @@ export function ProjectServiceTable({
                         {item.masterService?.code ?? "-"}
                       </p>
                     </div>
+                  </TableCell>
+
+                  <TableCell>
+                    {item.masterService?.category ? (
+                      <div className="space-y-1">
+                        <Badge variant="outline" className="whitespace-nowrap">
+                          {item.masterService.category.name}
+                        </Badge>
+
+                        {!item.masterService.category.isActive && (
+                          <p className="text-xs text-muted-foreground">
+                            Kategori Tidak Aktif
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">
+                        Uncategorized
+                      </span>
+                    )}
                   </TableCell>
 
                   <TableCell>

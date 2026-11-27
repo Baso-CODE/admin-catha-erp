@@ -33,6 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { ServiceCategorySelect } from "./service-category-select";
 
 const schema = z.object({
   code: z
@@ -49,6 +50,7 @@ const schema = z.object({
     .optional(),
   workflowTemplateId: z.string().optional(),
   isActive: z.boolean(),
+  categoryId: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -77,6 +79,7 @@ export function CreateMasterServiceModal({
       code: "",
       name: "",
       description: "",
+      categoryId: "",
       workflowTemplateId: "",
       isActive: true,
     },
@@ -84,7 +87,7 @@ export function CreateMasterServiceModal({
 
   const workflowTemplateId = watch("workflowTemplateId");
   const isActive = watch("isActive");
-
+  const categoryId = watch("categoryId");
   useEffect(() => {
     if (!open) return;
 
@@ -127,6 +130,7 @@ export function CreateMasterServiceModal({
         code: values.code.trim(),
         name: values.name.trim(),
         description: values.description?.trim() || undefined,
+        categoryId: values.categoryId || undefined,
         workflowTemplateId: values.workflowTemplateId || undefined,
         isActive: values.isActive,
       });
@@ -156,7 +160,7 @@ export function CreateMasterServiceModal({
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Tambah Master Service</DialogTitle>
           <DialogDescription>
@@ -201,6 +205,18 @@ export function CreateMasterServiceModal({
               </p>
             )}
           </div>
+
+          <ServiceCategorySelect
+            open={open}
+            value={categoryId}
+            disabled={isSubmitting}
+            onChange={(value) =>
+              setValue("categoryId", value, {
+                shouldDirty: true,
+                shouldValidate: true,
+              })
+            }
+          />
 
           <div className="space-y-2">
             <Label>Default Workflow Template</Label>

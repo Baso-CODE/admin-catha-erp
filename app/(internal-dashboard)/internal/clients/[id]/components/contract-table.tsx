@@ -11,6 +11,7 @@ import {
 } from "@/app/services/contract.service";
 
 import { PermissionGuard } from "@/components/shared/permission-guard";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -189,6 +190,7 @@ export function ContractTable({
                 <tr>
                   <th className="px-4 py-3 text-left font-medium">Contract</th>
                   <th className="px-4 py-3 text-left font-medium">Type</th>
+                  <th className="px-4 py-3 text-left font-medium">Services</th>
                   <th className="px-4 py-3 text-left font-medium">Periode</th>
                   <th className="px-4 py-3 text-left font-medium">Nilai</th>
                   <th className="px-4 py-3 text-left font-medium">Status</th>
@@ -214,6 +216,31 @@ export function ContractTable({
 
                     <td className="px-4 py-3">
                       {contract.contractType ?? "-"}
+                    </td>
+                    <td className="px-4 py-3">
+                      {(contract.serviceItems?.length ?? 0) > 0 ? (
+                        <div className="space-y-1">
+                          <Badge variant="outline">
+                            {contract.serviceItems?.length ?? 0} Services
+                          </Badge>
+
+                          <p className="text-xs text-muted-foreground">
+                            {
+                              new Set(
+                                (contract.serviceItems ?? []).map(
+                                  (item) =>
+                                    item.categoryIdSnapshot ?? "uncategorized",
+                                ),
+                              ).size
+                            }{" "}
+                            grup kategori
+                          </p>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">
+                          Belum ditentukan
+                        </span>
+                      )}
                     </td>
 
                     <td className="px-4 py-3">

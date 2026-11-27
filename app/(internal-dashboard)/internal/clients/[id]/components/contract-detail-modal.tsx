@@ -10,6 +10,7 @@ import {
 import { ReactNode } from "react";
 
 import { ContractItem } from "@/app/services/contract.service";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +19,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { QuotationServiceSummary } from "../../../crm/[id]/components/quotation-service-summary";
 
 interface ContractDetailModalProps {
   contract: ContractItem;
@@ -159,6 +161,18 @@ export function ContractDetailModal({
                 Contract ini tidak memiliki quotation.
               </p>
             )}
+          </div>
+
+          <div className="space-y-4 rounded-xl border p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-semibold">Contracted Services</p>
+
+              <Badge variant="outline">
+                {contract.serviceItems?.length ?? 0} Services
+              </Badge>
+            </div>
+
+            <QuotationServiceSummary items={contract.serviceItems ?? []} />
           </div>
 
           <div className="space-y-4">

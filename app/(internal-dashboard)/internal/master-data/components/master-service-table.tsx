@@ -1,5 +1,9 @@
 "use client";
 
+import {
+  serviceCategoryService,
+  type ServiceCategoryItem,
+} from "@/app/services/serviceCategory.service";
 import { Eye, MoreHorizontal, Pencil, Search, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -9,6 +13,7 @@ import {
   masterServiceService,
 } from "@/app/services/masterService.service";
 import { PermissionGuard } from "@/components/shared/permission-guard";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -49,7 +54,11 @@ export function MasterServiceTable({ permissions }: MasterServiceTableProps) {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
+  const [categories, setCategories] = useState<ServiceCategoryItem[]>([]);
 
+  const [categoryId, setCategoryId] = useState("all");
+
+  const [loadingCategories, setLoadingCategories] = useState(true);
   const debouncedSearch = useDebounce(search, 600);
 
   const loadData = useCallback(async () => {
@@ -59,6 +68,7 @@ export function MasterServiceTable({ permissions }: MasterServiceTableProps) {
       const response = await masterServiceService.getAll({
         search: debouncedSearch || undefined,
         isActive: status === "all" ? undefined : status === "active",
+        categoryId: categoryId === "all" ? undefined : categoryId,
         page,
         limit: 10,
       });
@@ -75,7 +85,37 @@ export function MasterServiceTable({ permissions }: MasterServiceTableProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [debouncedSearch, status, page]);
+  }, [debouncedSearch, status, categoryId, page]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadCategories() {
+      try {
+        setLoadingCategories(true);
+
+        const response = await serviceCategoryService.getAll();
+
+        if (active) {
+          setCategories(response.data);
+        }
+      } catch (error) {
+        if (active) {
+          toast.error("Gagal mengambil service category.");
+        }
+      } finally {
+        if (active) {
+          setLoadingCategories(false);
+        }
+      }
+    }
+
+    void loadCategories();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     void loadData();
@@ -83,7 +123,7 @@ export function MasterServiceTable({ permissions }: MasterServiceTableProps) {
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, status]);
+  }, [debouncedSearch, status, categoryId]);
 
   const handleDelete = async (id: string) => {
     try {
@@ -103,7 +143,7 @@ export function MasterServiceTable({ permissions }: MasterServiceTableProps) {
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-1 flex-col gap-3 sm:flex-row">
+        <div className="flex flex-1 flex-col flex-wrap gap-3 sm:flex-row">
           <div className="relative w-full sm:max-w-sm">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -124,6 +164,29 @@ export function MasterServiceTable({ permissions }: MasterServiceTableProps) {
               <SelectItem value="inactive">Tidak Aktif</SelectItem>
             </SelectContent>
           </Select>
+
+          <Select
+            value={categoryId}
+            disabled={loadingCategories}
+            onValueChange={(value) => {
+              setCategoryId(value);
+              setPage(1);
+            }}>
+            <SelectTrigger className="w-full sm:w-64">
+              <SelectValue placeholder="Pilih kategori" />
+            </SelectTrigger>
+
+            <SelectContent>
+              <SelectItem value="all">Semua Kategori</SelectItem>
+
+              {categories.map((category) => (
+                <SelectItem key={category.id} value={category.id}>
+                  {category.name}
+                  {!category.isActive && " (Tidak Aktif)"}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <PermissionGuard
@@ -133,12 +196,13 @@ export function MasterServiceTable({ permissions }: MasterServiceTableProps) {
         </PermissionGuard>
       </div>
 
-      <div className="rounded-xl border">
+      <div className="overflow-x-auto rounded-xl border">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Code</TableHead>
               <TableHead>Service</TableHead>
+              <TableHead>Category</TableHead>
               <TableHead>Workflow Template</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Project</TableHead>
@@ -150,7 +214,7 @@ export function MasterServiceTable({ permissions }: MasterServiceTableProps) {
             {isLoading ? (
               <TableRow>
                 <TableCell
-                  colSpan={6}
+                  colSpan={7}
                   className="h-24 text-center text-muted-foreground">
                   Memuat data...
                 </TableCell>
@@ -158,7 +222,7 @@ export function MasterServiceTable({ permissions }: MasterServiceTableProps) {
             ) : items.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={6}
+                  colSpan={7}
                   className="h-24 text-center text-muted-foreground">
                   Master service belum tersedia.
                 </TableCell>
@@ -180,6 +244,24 @@ export function MasterServiceTable({ permissions }: MasterServiceTableProps) {
                         </p>
                       )}
                     </div>
+                  </TableCell>
+
+                  <TableCell>
+                    {item.category ? (
+                      <div className="space-y-1">
+                        <Badge variant="outline">{item.category.name}</Badge>
+
+                        {!item.category.isActive && (
+                          <p className="text-xs text-muted-foreground">
+                            Kategori Tidak Aktif
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">
+                        Uncategorized
+                      </span>
+                    )}
                   </TableCell>
 
                   <TableCell>{item.defaultTemplate?.name ?? "-"}</TableCell>
