@@ -1,7 +1,12 @@
 import { redirect } from "next/navigation";
 
 import { getCurrentUser } from "@/app/lib/auth/get-current-user";
+import { Metadata } from "next";
 import { MasterDataPageClient } from "./master-data-page-client";
+
+export const metadata: Metadata = {
+  title: "Master Data & Workflow",
+};
 
 export default async function MasterDataPage() {
   const user = await getCurrentUser();

@@ -1,7 +1,12 @@
 import { requireInternalUser } from "@/app/lib/auth/require-internal-user";
 import { BarChart3, FolderKanban, TrendingUp, Users } from "lucide-react";
+import { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+
+export const metadata: Metadata = {
+  title: "Reportig & Analytics",
+};
 
 export default async function ReportsPage() {
   const user = await requireInternalUser();

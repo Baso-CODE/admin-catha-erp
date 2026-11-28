@@ -316,8 +316,8 @@ export function InvoiceForm({ invoice }: InvoiceFormProps) {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-        <div className="space-y-6">
+      <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="min-w-0 space-y-6">
           <div className="rounded-xl border p-5">
             <h2 className="mb-4 font-semibold">Informasi Invoice</h2>
 
@@ -336,7 +336,7 @@ export function InvoiceForm({ invoice }: InvoiceFormProps) {
                       projectId: "",
                     }))
                   }>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full min-w-0 max-w-full overflow-hidden [&>[data-slot=select-value]]:block [&>[data-slot=select-value]]:min-w-0 [&>[data-slot=select-value]]:truncate">
                     <SelectValue placeholder="Pilih client" />
                   </SelectTrigger>
 
@@ -362,7 +362,7 @@ export function InvoiceForm({ invoice }: InvoiceFormProps) {
                       contractId: value === "NONE" ? "" : value,
                     }))
                   }>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full min-w-0 max-w-full overflow-hidden [&>[data-slot=select-value]]:block [&>[data-slot=select-value]]:min-w-0 [&>[data-slot=select-value]]:truncate">
                     <SelectValue placeholder="Pilih contract" />
                   </SelectTrigger>
 
@@ -396,15 +396,22 @@ export function InvoiceForm({ invoice }: InvoiceFormProps) {
                           : prev.contractId,
                     }));
                   }}>
-                  <SelectTrigger>
+                  <SelectTrigger
+                    id="invoice-project"
+                    className="w-full min-w-0 max-w-full overflow-hidden [&>[data-slot=select-value]]:block [&>[data-slot=select-value]]:min-w-0 [&>[data-slot=select-value]]:truncate">
                     <SelectValue placeholder="Pilih project" />
                   </SelectTrigger>
 
-                  <SelectContent>
+                  <SelectContent
+                    position="popper"
+                    className="w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]">
                     <SelectItem value="NONE">Tanpa Project</SelectItem>
 
                     {projects.map((project) => (
-                      <SelectItem key={project.id} value={project.id}>
+                      <SelectItem
+                        key={project.id}
+                        value={project.id}
+                        className="whitespace-normal break-words">
                         {project.projectCode} — {project.name}
                       </SelectItem>
                     ))}
@@ -511,7 +518,7 @@ export function InvoiceForm({ invoice }: InvoiceFormProps) {
                 return (
                   <div
                     key={index}
-                    className="grid gap-3 rounded-lg border p-4 md:grid-cols-[1fr_120px_180px_180px_40px]">
+                    className="grid min-w-0 grid-cols-1 gap-3 rounded-lg border p-4 sm:grid-cols-2 2xl:grid-cols-[minmax(0,1fr)_minmax(60px,0.4fr)_minmax(100px,0.8fr)_minmax(100px,0.8fr)_auto]">
                     <div className="space-y-2">
                       <Label>Deskripsi</Label>
 
@@ -525,9 +532,10 @@ export function InvoiceForm({ invoice }: InvoiceFormProps) {
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Qty</Label>
+                      <Label htmlFor={`invoice-qty-${index}`}>Qty</Label>
 
                       <Input
+                        id={`invoice-qty-${index}`}
                         type="number"
                         min="0.01"
                         step="0.01"
@@ -539,9 +547,12 @@ export function InvoiceForm({ invoice }: InvoiceFormProps) {
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Unit Price</Label>
+                      <Label htmlFor={`invoice-unit-price-${index}`}>
+                        Unit Price
+                      </Label>
 
                       <Input
+                        id={`invoice-unit-price-${index}`}
                         type="number"
                         min="0"
                         step="0.01"
@@ -562,6 +573,7 @@ export function InvoiceForm({ invoice }: InvoiceFormProps) {
 
                     <div className="flex items-end">
                       <Button
+                        aria-label={`Hapus item invoice ${index + 1}`}
                         type="button"
                         variant="ghost"
                         size="icon"
@@ -577,11 +589,11 @@ export function InvoiceForm({ invoice }: InvoiceFormProps) {
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <div className="sticky top-6 rounded-xl border p-5">
             <h2 className="mb-4 font-semibold">Ringkasan Invoice</h2>
 
-            <div className="space-y-4">
+            <div className="min-w-0 space-y-4">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Subtotal</span>
 

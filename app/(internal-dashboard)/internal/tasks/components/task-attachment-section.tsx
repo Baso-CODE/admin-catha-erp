@@ -39,7 +39,16 @@ export function TaskAttachmentSection({
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
 
-    if (!file) return;
+    if (!file || isUploading) return;
+
+    const maxSize = 10 * 1024 * 1024;
+
+    if (file.size > maxSize) {
+      toast.error("Ukuran file maksimal 10 MB.");
+
+      event.target.value = "";
+      return;
+    }
 
     try {
       setIsUploading(true);
@@ -50,9 +59,16 @@ export function TaskAttachmentSection({
 
       onRefresh();
     } catch (error) {
-      console.error(error);
+      console.error("Task attachment upload failed:", error);
 
-      toast.error("Gagal mengupload attachment");
+      toast.error("Gagal mengupload attachment", {
+        description:
+          error instanceof TypeError
+            ? "Tidak dapat menjangkau API. Periksa koneksi dan konfigurasi server."
+            : error instanceof Error
+              ? error.message
+              : "Terjadi kesalahan pada server.",
+      });
     } finally {
       setIsUploading(false);
 
@@ -122,6 +138,10 @@ export function TaskAttachmentSection({
 
             {isUploading ? "Mengupload..." : "Upload File"}
           </Button>
+          <p className="text-xs text-muted-foreground">
+            JPG, PNG, WEBP, PDF, DOC, DOCX, XLS, dan XLSX. Maksimal 10 MB per
+            file.
+          </p>
         </>
       )}
 
@@ -156,7 +176,7 @@ export function TaskAttachmentSection({
                   size="icon"
                   disabled={deletingId === attachment.id}
                   onClick={() => handleDelete(attachment.id)}>
-                  <Trash2 className="size-4" />
+                  <Trash2 className="size-4" aria-label="Hapus attachment" />
                 </Button>
               )}
             </div>

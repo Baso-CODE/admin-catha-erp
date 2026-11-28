@@ -5,19 +5,20 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+
 import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
-import { ChevronRightIcon, MoreHorizontalIcon, PlusIcon } from "lucide-react";
+
+import { ChevronRightIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -45,28 +46,21 @@ export function NavWorkspaces({
           {workspaces.map((workspace) => (
             <Collapsible
               key={workspace.name}
+              className="group/workspace"
               defaultOpen={workspace.pages.some(
                 (page) =>
                   pathname === page.url || pathname.startsWith(`${page.url}/`),
               )}>
               <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <span>{workspace.emoji}</span>
-                  <span>{workspace.name}</span>
-                </SidebarMenuButton>
+                <CollapsibleTrigger asChild>
+                  <SidebarMenuButton>
+                    <span>{workspace.emoji}</span>
 
-                <SidebarMenuAction
-                  asChild
-                  className="left-2 bg-sidebar-accent text-sidebar-accent-foreground data-[state=open]:rotate-90"
-                  showOnHover>
-                  <CollapsibleTrigger>
-                    <ChevronRightIcon />
-                  </CollapsibleTrigger>
-                </SidebarMenuAction>
+                    <span>{workspace.name}</span>
 
-                <SidebarMenuAction showOnHover>
-                  <PlusIcon />
-                </SidebarMenuAction>
+                    <ChevronRightIcon className="ml-auto size-4 transition-transform group-data-[state=open]/workspace:rotate-90" />
+                  </SidebarMenuButton>
+                </CollapsibleTrigger>
 
                 <CollapsibleContent>
                   <SidebarMenuSub>
@@ -91,13 +85,6 @@ export function NavWorkspaces({
               </SidebarMenuItem>
             </Collapsible>
           ))}
-
-          <SidebarMenuItem>
-            <SidebarMenuButton className="text-sidebar-foreground/70">
-              <MoreHorizontalIcon />
-              <span>More</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>

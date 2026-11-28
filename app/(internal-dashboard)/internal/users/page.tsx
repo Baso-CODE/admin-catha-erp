@@ -53,7 +53,7 @@ export default function UserManagementPage() {
     totalUsers: 0,
     activeUsers: 0,
     inactiveUsers: 0,
-    averageEfficiency: 0,
+    averageEfficiency: null as number | null,
   });
 
   const [performanceData, setPerformanceData] = useState<
@@ -211,12 +211,15 @@ export default function UserManagementPage() {
 
           <CardContent>
             <div className="text-2xl font-bold">
-              {metrics.averageEfficiency}%
+              {metrics.averageEfficiency === null
+                ? "—"
+                : `${metrics.averageEfficiency}%`}
             </div>
 
-            <p className="mt-1 flex items-center gap-1 text-xs font-medium text-emerald-500">
-              <TrendingUp className="size-3" />
-              Performa tim
+            <p className="mt-1 text-xs text-muted-foreground">
+              {metrics.averageEfficiency === null
+                ? "Metode pengukuran efisiensi belum tersedia"
+                : "Performa tim"}
             </p>
           </CardContent>
         </Card>
@@ -247,11 +250,12 @@ export default function UserManagementPage() {
         <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <CardTitle className="text-base font-semibold">
-              Grafik Performa Tim
+              Tren Penyelesaian Task
             </CardTitle>
 
             <p className="text-xs text-muted-foreground">
-              Total tugas selesai oleh seluruh staf berdasarkan periode.
+              Jumlah aktivitas penyelesaian task yang tercatat dalam audit log
+              berdasarkan periode.
             </p>
           </div>
 
@@ -261,7 +265,7 @@ export default function UserManagementPage() {
               size="sm"
               className="h-8 text-xs"
               onClick={() => setPeriod("3months")}>
-              3 Bulan
+              90 Hari
             </Button>
 
             <Button

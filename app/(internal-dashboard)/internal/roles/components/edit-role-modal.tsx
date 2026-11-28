@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { ReactNode, useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -47,8 +47,7 @@ export function EditRoleModal({
   const {
     register,
     handleSubmit,
-    setValue,
-    watch,
+    control,
     reset,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
@@ -59,8 +58,6 @@ export function EditRoleModal({
       isActive: role.isActive,
     },
   });
-
-  const isActive = watch("isActive");
 
   useEffect(() => {
     if (!open) return;
@@ -133,26 +130,39 @@ export function EditRoleModal({
             <Textarea rows={4} {...register("description")} />
           </div>
 
-          <div className="flex items-center justify-between rounded-lg border p-4">
-            <div>
-              <Label>Role Aktif</Label>
+          <Controller
+            name="isActive"
+            control={control}
+            render={({ field }) => (
+              <div className="flex items-center justify-between gap-4 rounded-lg border p-4">
+                <div className="min-w-0 space-y-1">
+                  <Label htmlFor={`role-active-${role.id}`}>
+                    {field.value ? "Role Aktif" : "Role Nonaktif"}
+                  </Label>
 
-              <p className="text-xs text-muted-foreground">
-                Nonaktifkan role tanpa menghapusnya.
-              </p>
-            </div>
+                  <p
+                    id={`role-status-description-${role.id}`}
+                    className="text-xs text-muted-foreground">
+                    {role.code === "OWNER"
+                      ? "Role OWNER tidak dapat dinonaktifkan."
+                      : field.value
+                        ? "Role dapat memberikan hak akses kepada pengguna."
+                        : "Hak akses dari role ini dinonaktifkan."}
+                  </p>
+                </div>
 
-            <Switch
-              checked={isActive}
-              disabled={role.code === "OWNER"}
-              onCheckedChange={(checked) =>
-                setValue("isActive", checked, {
-                  shouldDirty: true,
-                })
-              }
-              className="data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-slate-300"
-            />
-          </div>
+                <Switch
+                  id={`role-active-${role.id}`}
+                  checked={field.value === true}
+                  onCheckedChange={field.onChange}
+                  onBlur={field.onBlur}
+                  ref={field.ref}
+                  disabled={role.code === "OWNER" || isSubmitting}
+                  aria-describedby={`role-status-description-${role.id}`}
+                />
+              </div>
+            )}
+          />
 
           <DialogFooter>
             <Button

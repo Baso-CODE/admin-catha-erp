@@ -124,7 +124,7 @@ export function TaskChecklistSection({
             type="submit"
             size="icon"
             disabled={isSubmitting || !description.trim()}>
-            <Plus className="size-4" />
+            <Plus className="size-4" aria-label="Tambah checklist" />
           </Button>
         </form>
       )}
@@ -163,7 +163,7 @@ export function TaskChecklistSection({
                   variant="ghost"
                   disabled={updatingId === item.id}
                   onClick={() => handleDelete(item.id)}>
-                  <Trash2 className="size-4" />
+                  <Trash2 className="size-4" aria-label="Hapus checklist" />
                 </Button>
               )}
             </div>

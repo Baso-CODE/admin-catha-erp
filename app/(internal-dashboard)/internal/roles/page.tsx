@@ -1,7 +1,12 @@
 import { redirect } from "next/navigation";
 
 import { getCurrentUser } from "@/app/lib/auth/get-current-user";
+import { Metadata } from "next";
 import { RolesPageClient } from "./roles-page-client";
+
+export const metadata: Metadata = {
+  title: "Role & Permission",
+};
 
 export default async function RolesPage() {
   const user = await getCurrentUser();
