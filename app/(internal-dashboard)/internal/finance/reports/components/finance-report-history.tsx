@@ -73,16 +73,17 @@ export function FinanceReportHistory({
     limit: 10,
     totalPages: 0,
   });
-
+  const [loadError, setLoadError] = useState(false);
   const loadHistory = useCallback(async () => {
     try {
       setLoading(true);
-
+      setLoadError(false);
       const response = await financeReportService.getHistory(page, 10);
 
       setItems(response.data);
       setMeta(response.meta);
     } catch (error) {
+      setLoadError(true);
       toast.error("Gagal memuat riwayat export", {
         description:
           error instanceof Error ? error.message : "Terjadi kesalahan.",
@@ -146,6 +147,15 @@ export function FinanceReportHistory({
                   className="px-4 py-12 text-center text-muted-foreground">
                   <Loader2 className="mx-auto mb-2 size-5 animate-spin" />
                   Memuat riwayat export...
+                </td>
+              </tr>
+            ) : loadError ? (
+              <tr>
+                <td
+                  colSpan={5}
+                  className="px-4 py-12 text-center text-sm text-destructive">
+                  Gagal memuat riwayat export. Silakan tekan Refresh untuk
+                  mencoba kembali.
                 </td>
               </tr>
             ) : items.length === 0 ? (

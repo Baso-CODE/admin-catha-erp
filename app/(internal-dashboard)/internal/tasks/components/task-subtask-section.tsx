@@ -77,7 +77,7 @@ export function TaskSubtaskSection({
             type="submit"
             size="icon"
             disabled={isSubmitting || !title.trim()}>
-            <Plus className="size-4" />
+            <Plus className="size-4" aria-label="Tambah subtask" />
           </Button>
         </form>
       )}

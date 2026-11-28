@@ -1,7 +1,12 @@
 import { requireInternalUser } from "@/app/lib/auth/require-internal-user";
 import { financeDashboardService } from "@/app/services/finance-dashboard.service";
+import { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { FinanceDashboard } from "./components/finance-dashboard";
+
+export const metadata: Metadata = {
+  title: "Finance",
+};
 
 export default async function FinancePage() {
   const user = await requireInternalUser();

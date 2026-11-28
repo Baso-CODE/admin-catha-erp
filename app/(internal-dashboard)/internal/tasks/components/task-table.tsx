@@ -123,7 +123,10 @@ export function TaskTable({ tasks, permissions, onRefresh }: TaskTableProps) {
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button type="button" variant="ghost" size="icon">
-                          <MoreHorizontal className="size-4" />
+                          <MoreHorizontal
+                            className="size-4"
+                            aria-label="Buka aksi task"
+                          />
                         </Button>
                       </DropdownMenuTrigger>
 

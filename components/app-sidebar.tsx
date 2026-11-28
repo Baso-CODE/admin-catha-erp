@@ -26,7 +26,6 @@ import {
   LogOut,
   ReceiptTextIcon,
   Search,
-  SettingsIcon,
   UsersIcon,
   WorkflowIcon,
 } from "lucide-react";
@@ -94,12 +93,6 @@ const data = {
 
   navSecondary: [
     {
-      title: "Settings",
-      url: "/internal/settings",
-      icon: <SettingsIcon />,
-      permission: "admin.role.read",
-    },
-    {
       title: "Support Tickets",
       url: "/internal/support",
       icon: <HelpCircleIcon />,
@@ -141,10 +134,10 @@ const data = {
       emoji: "⚡",
       pages: [
         {
-          name: "Daftar Klien Aktif",
-          url: "/internal/crm",
+          name: "Daftar Klien",
+          url: "/internal/clients",
           emoji: "👥",
-          permission: "crm.lead.read",
+          permission: "client.read",
         },
         {
           name: "Tracking Progress Task",

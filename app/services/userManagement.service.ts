@@ -56,7 +56,7 @@ export interface UserMetricsResponse {
     totalUsers: number;
     activeUsers: number;
     inactiveUsers: number;
-    averageEfficiency: number;
+    averageEfficiency: number | null;
   };
 }
 

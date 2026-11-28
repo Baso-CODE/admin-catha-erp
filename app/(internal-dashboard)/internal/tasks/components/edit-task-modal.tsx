@@ -57,6 +57,16 @@ export function EditTaskModal({
     task.dueDate ? new Date(task.dueDate).toISOString().slice(0, 10) : "",
   );
 
+  const [submitted, setSubmitted] = useState(false);
+
+  const titleError = submitted
+    ? title.trim().length < 2
+      ? "Judul task minimal 2 karakter."
+      : title.trim().length > 200
+        ? "Judul task maksimal 200 karakter."
+        : undefined
+    : undefined;
+
   useEffect(() => {
     if (!open) return;
 
@@ -99,7 +109,14 @@ export function EditTaskModal({
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (isSubmitting) return;
 
+    setSubmitted(true);
+
+    if (title.trim().length < 2 || title.trim().length > 200) {
+      toast.error("Periksa kembali judul task.");
+      return;
+    }
     if (!title.trim()) {
       toast.error("Judul task wajib diisi");
       return;
@@ -141,9 +158,15 @@ export function EditTaskModal({
           <div className="space-y-2">
             <Label htmlFor={`title-${task.id}`}>Judul Task</Label>
             <Input
-              id={`title-${task.id}`}
+              id="title"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              maxLength={200}
+              disabled={isSubmitting}
+              aria-required="true"
+              aria-invalid={!!titleError}
+              aria-describedby={titleError ? "task-title-error" : undefined}
+              onChange={(event) => setTitle(event.target.value)}
+              placeholder="Contoh: Setup Meta Ads"
             />
           </div>
 

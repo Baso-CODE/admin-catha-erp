@@ -69,11 +69,11 @@ export const roleService = {
     return apiClient<{
       success: boolean;
       data: RoleItem[];
-    }>("/rbac/roles", {
+    }>("/rbac/roles?includeInactive=true", {
       method: "GET",
+      cache: "no-store",
     });
   },
-
   async getRoleById(id: string) {
     return apiClient<{
       success: boolean;

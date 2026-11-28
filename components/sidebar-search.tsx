@@ -59,7 +59,9 @@ export function SidebarSearch({
     (item: SearchMenuItem) => {
       if (item.accessMode === "reporting") {
         return (
+          permissions.includes("client.read") ||
           permissions.includes("project.read") ||
+          permissions.includes("task.read") ||
           (permissions.includes("invoice.read") &&
             permissions.includes("payment.read"))
         );
@@ -159,6 +161,18 @@ export function SidebarSearch({
       url: "/internal/audit-logs",
       icon: <Briefcase className="mr-2 size-4 text-primary" />,
       permission: "admin.audit.read",
+    },
+    {
+      title: "Team Management",
+      url: "/internal/teams",
+      icon: <Users className="mr-2 size-4 text-primary" />,
+      permission: "admin.team.read",
+    },
+    {
+      title: "Role & Permission",
+      url: "/internal/roles",
+      icon: <ShieldCheck className="mr-2 size-4 text-primary" />,
+      permission: "admin.role.read",
     },
   ];
 

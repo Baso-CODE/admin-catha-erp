@@ -165,7 +165,10 @@ export function TaskCommentSection({
                           variant="ghost"
                           size="icon"
                           onClick={() => handleStartEdit(item)}>
-                          <Pencil className="size-4" />
+                          <Pencil
+                            className="size-4"
+                            aria-label="Edit komentar"
+                          />
                         </Button>
                       )}
 
@@ -176,7 +179,10 @@ export function TaskCommentSection({
                           size="icon"
                           disabled={deletingId === item.id}
                           onClick={() => handleDelete(item.id)}>
-                          <Trash2 className="size-4" />
+                          <Trash2
+                            className="size-4"
+                            aria-label="Hapus komentar"
+                          />
                         </Button>
                       )}
                     </div>

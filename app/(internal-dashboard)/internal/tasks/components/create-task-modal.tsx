@@ -52,6 +52,19 @@ export function CreateTaskModal({ onSuccess }: CreateTaskModalProps) {
   const [status, setStatus] = useState<TaskStatus>("TODO");
   const [dueDate, setDueDate] = useState("");
 
+  const [submitted, setSubmitted] = useState(false);
+
+  const titleError = submitted
+    ? title.trim().length < 2
+      ? "Judul task minimal 2 karakter."
+      : title.trim().length > 200
+        ? "Judul task maksimal 200 karakter."
+        : undefined
+    : undefined;
+
+  const projectError =
+    submitted && !projectId ? "Project wajib dipilih." : undefined;
+
   useEffect(() => {
     if (!open) return;
 
@@ -87,13 +100,24 @@ export function CreateTaskModal({ onSuccess }: CreateTaskModalProps) {
     setPriority("MEDIUM");
     setStatus("TODO");
     setDueDate("");
+    setSubmitted(false);
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (!title.trim() || !projectId) {
-      toast.error("Judul dan project wajib diisi");
+    if (isSubmitting) return;
+
+    setSubmitted(true);
+
+    const normalizedTitle = title.trim();
+
+    if (
+      normalizedTitle.length < 2 ||
+      normalizedTitle.length > 200 ||
+      !projectId
+    ) {
+      toast.error("Lengkapi field yang wajib diisi.");
       return;
     }
 
@@ -101,7 +125,7 @@ export function CreateTaskModal({ onSuccess }: CreateTaskModalProps) {
       setIsSubmitting(true);
 
       await taskService.createTask({
-        title: title.trim(),
+        title: normalizedTitle,
         description: description.trim() || undefined,
         projectId,
         assigneeId: assigneeId || undefined,
@@ -114,20 +138,28 @@ export function CreateTaskModal({ onSuccess }: CreateTaskModalProps) {
 
       resetForm();
       setOpen(false);
-      onSuccess?.();
     } catch (error) {
-      console.error(error);
+      toast.error("Gagal membuat task", {
+        description:
+          error instanceof Error
+            ? error.message
+            : "Terjadi kesalahan pada server.",
+      });
 
-      toast.error("Gagal membuat task");
+      return;
     } finally {
       setIsSubmitting(false);
     }
+
+    await onSuccess?.();
   };
 
   return (
     <Dialog
       open={open}
       onOpenChange={(value) => {
+        if (isSubmitting) return;
+
         setOpen(value);
 
         if (!value) {
@@ -141,21 +173,42 @@ export function CreateTaskModal({ onSuccess }: CreateTaskModalProps) {
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-xl">
-        <DialogHeader>
+      <DialogContent
+        className="flex max-h-[calc(100dvh-2rem)] min-h-0 flex-col gap-0 overflow-hidden p-0 sm:max-w-xl"
+        onInteractOutside={(event) => event.preventDefault()}>
+        <DialogHeader className="shrink-0 border-b px-6 py-5 pr-14">
           <DialogTitle>Tambah Task</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="title">Judul Task</Label>
+        <form
+          noValidate
+          onSubmit={handleSubmit}
+          className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-6 py-5">
+            <Label htmlFor="title">
+              Judul Task <span className="text-destructive">*</span>
+            </Label>
 
             <Input
               id="title"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              maxLength={200}
+              disabled={isSubmitting}
+              aria-required="true"
+              aria-invalid={!!titleError}
+              aria-describedby={titleError ? "task-title-error" : undefined}
+              onChange={(event) => setTitle(event.target.value)}
               placeholder="Contoh: Setup Meta Ads"
             />
+
+            {titleError && (
+              <p
+                id="task-title-error"
+                role="alert"
+                className="text-xs text-destructive">
+                {titleError}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -164,16 +217,31 @@ export function CreateTaskModal({ onSuccess }: CreateTaskModalProps) {
             <Textarea
               id="description"
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              rows={5}
+              disabled={isSubmitting}
+              className="h-32 max-h-48 resize-y overflow-y-auto field-sizing-fixed"
+              onChange={(event) => setDescription(event.target.value)}
               placeholder="Deskripsi task..."
             />
           </div>
 
-          <div className="space-y-2">
-            <Label>Project</Label>
+          <div className="min-w-0 space-y-2">
+            <Label htmlFor="task-project">
+              Project <span className="text-destructive">*</span>
+            </Label>
 
-            <Select value={projectId} onValueChange={setProjectId}>
-              <SelectTrigger>
+            <Select
+              value={projectId}
+              onValueChange={setProjectId}
+              disabled={isSubmitting}>
+              <SelectTrigger
+                id="task-project"
+                className="w-full min-w-0"
+                aria-required="true"
+                aria-invalid={!!projectError}
+                aria-describedby={
+                  projectError ? "task-project-error" : undefined
+                }>
                 <SelectValue placeholder="Pilih project" />
               </SelectTrigger>
 
@@ -185,6 +253,15 @@ export function CreateTaskModal({ onSuccess }: CreateTaskModalProps) {
                 ))}
               </SelectContent>
             </Select>
+
+            {projectError && (
+              <p
+                id="task-project-error"
+                role="alert"
+                className="text-xs text-destructive">
+                {projectError}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -262,11 +339,15 @@ export function CreateTaskModal({ onSuccess }: CreateTaskModalProps) {
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t bg-background px-6 py-4">
             <Button
               type="button"
               variant="outline"
-              onClick={() => setOpen(false)}>
+              disabled={isSubmitting}
+              onClick={() => {
+                resetForm();
+                setOpen(false);
+              }}>
               Batal
             </Button>
 

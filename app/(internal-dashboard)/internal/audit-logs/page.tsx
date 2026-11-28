@@ -21,6 +21,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useDebounce } from "@/hooks/useDebounce";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Audit Logs",
+};
 
 export default function AuditLogsPage() {
   const [search, setSearch] = useState("");
